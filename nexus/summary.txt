@@ -1,1 +1,1 @@
-Server-side mod: non-combat XP (exploration, books, quests, mining, item sets) is shared with every online player, at any distance. Multiplier in an INI. Players install nothing. Enshrouded 1.0 dedicated server, Windows or Linux/Wine.
+Server-side mod for Enshrouded 1.0 dedicated servers: XP from exploring, books, quests, mining and item sets is shared with every online player, at any distance. Optional: combat XP for players far from the kill, single or double quest XP, multiplier. Players install nothing. Windows and Linux (Wine/Docker). Open source.
