@@ -1,5 +1,7 @@
 [center][img]https://raw.githubusercontent.com/oggii/enshrouded-shared-xp/main/nexus/banner.jpg[/img][/center]
 
+[b]New in 1.1.0:[/b] optional combat XP sharing ([b]ShareCombatXp=1[/b]) for players far from the kill.
+
 [size=4][b]Description[/b][/size]
 When one player earns XP from exploring, reading books and notes, quests, mining or completing item sets, every other player who is online gets the same amount. Distance does not matter: you can mine in one corner of the map while your friend explores the other, and you both level up.
 
@@ -21,7 +23,7 @@ Combat XP is left to the game by default (it already shares it with players near
 [*]Add the environment variable [i]WINEDLLOVERRIDES=powrprof=n,b[/i].
 [*]Start the container.
 [/list]
-[b]Check:[/b] [i]xpshare.log[/i] next to the server exe should end with "active: non-combat XP is shared with every online player".
+[b]Check:[/b] [i]xpshare.log[/i] next to the server exe should end with "active: non-combat XP is shared with every online player" (with ShareCombatXp=1: "active: all XP is shared with every online player").
 
 [b]Uninstall:[/b] stop the server and delete powrprof.dll, xpshare.ini and xpshare.log.
 
