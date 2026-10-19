@@ -42,6 +42,10 @@ constexpr uint8_t kGrantSystemCall[] = {0x44, 0x8b, 0x0d, 0x52, 0x29, 0xa2, 0x00
                                         0xcf, 0x44, 0x8b, 0x45, 0xa8, 0x48, 0x8b, 0x55, 0x08,
                                         0xe8, 0x76, 0xe6, 0xfd, 0xff, 0x48, 0x8b, 0x4d, 0x18};
 
+// Combat XP add in FUN_1400ec5c0 and the call after it (FUN_1400a6dd0, the field update).
+constexpr uint8_t kCombat[] = {0x47, 0x01, 0x3c, 0x88, 0xe8, 0xf9, 0xa1, 0xfb,
+                               0xff, 0x4c, 0x8b, 0xb5, 0x80, 0x00, 0x00, 0x00};
+
 // Returns the single match + offset, 0 if there is none or more than one.
 uintptr_t find_unique(const uint8_t* begin, size_t size, const Pattern& p, int& count) {
     count = 0;
@@ -92,9 +96,11 @@ bool find_targets(const uint8_t* base, Targets& out, std::string& error) {
         {"add_helper", kAddHelper, 0},
         {"knowledge_system_call", kKnowledgeSystemCall, 20},
         {"grant_system_call", kGrantSystemCall, 23},
+        {"combat", kCombat, 0},
     };
     uintptr_t* slots[] = {&out.mining,     &out.knowledge,            &out.commit_read,
-                          &out.add_helper, &out.knowledge_system_ret, &out.grant_system_ret};
+                          &out.add_helper, &out.knowledge_system_ret, &out.grant_system_ret,
+                          &out.combat};
     static_assert(std::size(patterns) == std::size(slots));
     for (size_t i = 0; i < std::size(patterns); ++i) {
         int count = 0;

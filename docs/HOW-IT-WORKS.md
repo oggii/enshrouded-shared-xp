@@ -35,7 +35,15 @@ ExperienceSourceType: 1 Exploration, 2 Lore, 3 Quest, 4 Combat, 5 Mining, 6 Item
 knowledge systems FUN_1401b7530 (type at `[rsp+0x80]` on entry, entity id `[r15]`) and
 FUN_1401b67a0 (type at `[rbp-0x60]`, entity id `[rbp+0xa0]`). Their return addresses
 (RVA 0x1b77e1 and 0x1b6a7a) are found by pattern too. Other callers are logged once and
-ignored. The combat system (FUN_1400ec5c0, type 4) is never hooked.
+ignored.
+
+| `combat` | 0xecbce | `add [r8+r9*4], r15d` in the combat system FUN_1400ec5c0 | amount `r15d`, receiver entity id `edi`, receiver index `r12`, kill record `[rsp+0x48]` |
+
+The combat hook is only installed with `ShareCombatXp=1`. For every kill the combat system
+collects the receivers near it (list at `[rbp-0x80]`, count at `[rbp-0x78]`) and gives each
+of them XP from FUN_14092ac40: the kill's XP value, scaled by the level difference between
+enemy and receiver and lowered for every extra receiver. The hook numbers the kills: a new
+kill starts when the kill record changes or the receiver index does not grow.
 
 Players are identified by entity id, the number the game writes into every XP event. The
 experience component's address is not stable (it moves on fast travel, for example).
@@ -45,7 +53,8 @@ experience component's address is not stable (it moves on fast travel, for examp
 `src/ledger.cpp` is plain logic without game code and has unit tests
 (`tests/ledger_test.cpp`):
 
-1. The source hooks record each non-combat gain with the entity id of the player who earned it.
+1. The source hooks record each gain with the entity id of the player who earned it (combat
+   gains also with the number of their kill).
 2. The `commit_read` hook runs once per player per tick. It adds to that player's pending XP
    the sum of all gains other players recorded since that player's previous visit, times
    `Multiplier`. The game then commits it like any other XP, including level-ups and sync.
@@ -56,6 +65,9 @@ experience component's address is not stable (it moves on fast travel, for examp
    same amount within 10 seconds of it (`kJointWindowMs`). Quest gains are held 5 seconds
    (`kQuestHoldMs`) before they are shared, so the receiver's own gain has time to arrive; a
    receiver's later gains wait behind a held quest gain, they are delayed, never lost.
+5. Combat (`ShareCombatXp=1`): combat gains are held 1 second (`kCombatHoldMs`) so every gain
+   of a kill is in. A kill is settled once, at its first gain: a receiver who got XP from it
+   gets nothing more; every other player gets the largest amount any player got from it.
 
 All game memory reads go through SEH-guarded helpers (`src/memory.cpp`), so a bad pointer
 skips one gain instead of crashing the server.

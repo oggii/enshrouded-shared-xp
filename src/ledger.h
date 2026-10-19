@@ -8,6 +8,11 @@
 // quest XP. With the filter on, a player does not also receive another player's quest gain if
 // the player recorded a quest gain of the same amount within kJointWindowMs of it. Quest gains
 // wait kQuestHoldMs before they are shared, so the receiver's own gain has time to arrive.
+//
+// Combat (only with sharing on): the game gives combat XP to the players near a kill, each its
+// own amount. Every combat gain carries the id of its kill. A player who got XP from a kill
+// gets nothing more for it; every other player gets the largest amount any player got from
+// that kill, once. Combat gains wait kCombatHoldMs so all gains of a kill are in.
 #pragma once
 
 #include <cstdint>
@@ -34,13 +39,18 @@ class Ledger {
 public:
     static constexpr uint64_t kQuestHoldMs = 5'000;
     static constexpr uint64_t kJointWindowMs = 10'000;
+    static constexpr uint64_t kCombatHoldMs = 1'000;
 
     // On: quest XP that a receiver earned itself at the same time is not shared to it again.
     void set_skip_joint_quests(bool on);
 
-    // A gain of `amount` XP by the player whose experience component is `player`.
-    // Combat and None are ignored. Returns true if the gain was recorded.
-    bool record(uintptr_t player, uint32_t amount, uint8_t type, uint64_t now_ms);
+    // On: combat XP is shared with players who were not at the kill. Off: combat is ignored.
+    void set_share_combat(bool on);
+
+    // A gain of `amount` XP by `player`. `kill` identifies the kill for combat gains (all gains
+    // of one kill share it). None is ignored, Combat unless sharing it is on. Returns true if
+    // the gain was recorded.
+    bool record(uintptr_t player, uint32_t amount, uint8_t type, uint64_t now_ms, uint64_t kill = 0);
 
     // XP owed to `player` for gains other players recorded since its previous visit,
     // already multiplied. A player seen for the first time gets nothing for the past.
@@ -62,6 +72,7 @@ private:
         uintptr_t player;
         uint32_t amount;
         uint8_t type;
+        uint64_t kill;
         uint64_t at_ms;
     };
     struct Visit {
@@ -70,9 +81,14 @@ private:
     };
 
     bool earned_same_quest(uintptr_t player, const Gain& other) const;
+    // XP `player` is owed for the kill that `first` (its first gain) belongs to: 0 if the player
+    // got XP from it (unless `include_own`), else the largest amount any player got from it.
+    uint32_t kill_share(uintptr_t player, const Gain& first, bool include_own) const;
+    bool first_of_kill(const Gain& gain) const;
 
     mutable std::mutex mutex_;
     bool skip_joint_quests_ = false;
+    bool share_combat_ = false;
     uint64_t seq_ = 0;
     std::vector<Gain> gains_;
     std::unordered_map<uintptr_t, Visit> visits_;

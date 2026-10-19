@@ -18,19 +18,46 @@ const char* source_name(uint8_t type) {
     return "Unknown";
 }
 
-bool Ledger::record(uintptr_t player, uint32_t amount, uint8_t type, uint64_t now_ms) {
-    if (amount == 0 || type == static_cast<uint8_t>(Source::Combat) ||
-        type == static_cast<uint8_t>(Source::None)) {
+bool Ledger::record(uintptr_t player, uint32_t amount, uint8_t type, uint64_t now_ms, uint64_t kill) {
+    if (amount == 0 || type == static_cast<uint8_t>(Source::None)) {
         return false;
     }
     std::lock_guard lock(mutex_);
-    gains_.push_back({++seq_, player, amount, type, now_ms});
+    if (type == static_cast<uint8_t>(Source::Combat) && (!share_combat_ || kill == 0)) {
+        return false;
+    }
+    gains_.push_back({++seq_, player, amount, type, kill, now_ms});
     return true;
 }
 
 void Ledger::set_skip_joint_quests(bool on) {
     std::lock_guard lock(mutex_);
     skip_joint_quests_ = on;
+}
+
+void Ledger::set_share_combat(bool on) {
+    std::lock_guard lock(mutex_);
+    share_combat_ = on;
+}
+
+bool Ledger::first_of_kill(const Gain& gain) const {
+    for (const Gain& g : gains_) {
+        if (g.seq >= gain.seq) return true;  // gains_ is in seq order
+        if (g.type == static_cast<uint8_t>(Source::Combat) && g.kill == gain.kill) return false;
+    }
+    return true;
+}
+
+uint32_t Ledger::kill_share(uintptr_t player, const Gain& first, bool include_own) const {
+    uint32_t best = 0;
+    for (const Gain& g : gains_) {
+        if (g.seq < first.seq || g.type != static_cast<uint8_t>(Source::Combat) || g.kill != first.kill) {
+            continue;
+        }
+        if (g.player == player && !include_own) return 0;  // was at the kill, has its own XP
+        best = std::max(best, g.amount);
+    }
+    return best;
 }
 
 bool Ledger::earned_same_quest(uintptr_t player, const Gain& other) const {
@@ -59,10 +86,17 @@ uint32_t Ledger::collect(uintptr_t player, double multiplier, uint64_t now_ms, b
             continue;
         }
         const bool quest = gain.type == static_cast<uint8_t>(Source::Quest);
-        if (skip_joint_quests_ && quest && now_ms < gain.at_ms + kQuestHoldMs) {
+        const bool combat = gain.type == static_cast<uint8_t>(Source::Combat);
+        if ((skip_joint_quests_ && quest && now_ms < gain.at_ms + kQuestHoldMs) ||
+            (combat && now_ms < gain.at_ms + kCombatHoldMs)) {
             break;  // too early to tell; this and every later gain wait for the next visit
         }
         done = gain.seq;
+        if (combat) {
+            // A kill is settled once, at its first gain; its other gains only count there.
+            if (first_of_kill(gain)) total += kill_share(player, gain, include_own);
+            continue;
+        }
         if (!include_own && gain.player == player) {
             continue;
         }

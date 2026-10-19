@@ -3,7 +3,7 @@
 [size=4][b]Description[/b][/size]
 When one player earns XP from exploring, reading books and notes, quests, mining or completing item sets, every other player who is online gets the same amount. Distance does not matter: you can mine in one corner of the map while your friend explores the other, and you both level up.
 
-Combat XP is not touched. The game already shares it with players near the kill.
+Combat XP is left to the game by default (it already shares it with players near the kill). Turn on [b]ShareCombatXp[/b] and players far from a kill get the same XP as the players at the kill, so a friend who is mining keeps up with a friend who is fighting.
 
 [b]Server-side only.[/b] Players install nothing and join as usual.
 
@@ -30,6 +30,7 @@ Combat XP is not touched. The game already shares it with players near the kill.
 [*]Shares exploration, lore, quest, mining and item-set XP with every online player, at any distance.
 [*][b]Multiplier[/b] (default 1.0): shared XP = the other player's gain x this value. 0.5 = half.
 [*][b]DoubleQuestXp[/b] (default 0): quests finished together give everyone the quest XP once. Set 1 to also add the others' share (double quest XP).
+[*][b]ShareCombatXp[/b] (default 0): set 1 to share combat XP too. Players far from a kill get the XP the players at the kill got, once per kill; players at the kill get nothing extra.
 [*][b]Safe on game updates:[/b] on an unknown server build the mod does nothing and the server runs as usual.
 [*][b]LogEveryShare[/b]: 1 logs every gain and share, handy to check it works.
 [*]Opens no ports and sends nothing anywhere.

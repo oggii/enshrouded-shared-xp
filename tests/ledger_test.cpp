@@ -182,6 +182,71 @@ static void test_mode_keeps_own_quest_with_filter_on() {
     EXPECT_EQ(l.collect(A, 1.0, 1 + kHold, true), 5u);
 }
 
+constexpr uint8_t kCombat = 4;
+constexpr uint64_t kCombatHold = Ledger::kCombatHoldMs;
+
+static void combat_is_ignored_unless_shared() {
+    Ledger l;
+    EXPECT_EQ(l.record(A, 30, kCombat, 1, 1), false);
+    l.set_share_combat(true);
+    EXPECT_EQ(l.record(A, 30, kCombat, 1, 0), false);  // no kill id
+    EXPECT_EQ(l.record(A, 30, kCombat, 1, 1), true);
+}
+
+static void far_player_gets_the_kill_once_near_players_nothing() {
+    Ledger l;
+    l.set_share_combat(true);
+    l.collect(A, 1.0, 0);
+    l.collect(B, 1.0, 0);
+    l.collect(C, 1.0, 0);
+    l.record(A, 30, kCombat, 1, 7);  // A and B were at kill 7, C was not
+    l.record(B, 40, kCombat, 1, 7);
+    EXPECT_EQ(l.collect(C, 1.0, kCombatHold), 0u);  // still held
+    EXPECT_EQ(l.collect(A, 1.0, 1 + kCombatHold), 0u);
+    EXPECT_EQ(l.collect(B, 1.0, 1 + kCombatHold), 0u);
+    EXPECT_EQ(l.collect(C, 1.0, 1 + kCombatHold), 40u);  // the largest amount, once
+    EXPECT_EQ(l.collect(C, 1.0, 2 + kCombatHold), 0u);
+}
+
+static void separate_kills_are_shared_separately() {
+    Ledger l;
+    l.set_share_combat(true);
+    l.collect(A, 1.0, 0);
+    l.collect(B, 1.0, 0);
+    l.collect(C, 1.0, 0);
+    l.record(A, 30, kCombat, 1, 1);  // A kills alone
+    l.record(B, 20, kCombat, 1, 2);  // B kills alone elsewhere, same moment
+    EXPECT_EQ(l.collect(A, 1.0, 1 + kCombatHold), 20u);
+    EXPECT_EQ(l.collect(B, 1.0, 1 + kCombatHold), 30u);
+    EXPECT_EQ(l.collect(C, 1.0, 1 + kCombatHold), 50u);
+}
+
+static void kill_split_over_two_visits_counts_once() {
+    Ledger l;
+    l.set_share_combat(true);
+    l.collect(C, 1.0, 0);
+    l.record(A, 30, kCombat, 1, 3);
+    l.record(B, 30, kCombat, 2, 3);
+    EXPECT_EQ(l.collect(C, 1.0, 1 + kCombatHold), 30u);  // first gain ready, second held
+    EXPECT_EQ(l.collect(C, 1.0, 2 + kCombatHold), 0u);   // second gain: same kill, no more
+}
+
+static void combat_share_uses_the_multiplier() {
+    Ledger l;
+    l.set_share_combat(true);
+    l.collect(C, 0.5, 0);
+    l.record(A, 45, kCombat, 1, 4);
+    EXPECT_EQ(l.collect(C, 0.5, 1 + kCombatHold), 22u);
+}
+
+static void test_mode_credits_own_kill_once_more() {
+    Ledger l;
+    l.set_share_combat(true);
+    l.collect(A, 1.0, 0, true);
+    l.record(A, 45, kCombat, 1, 5);
+    EXPECT_EQ(l.collect(A, 1.0, 1 + kCombatHold, true), 45u);
+}
+
 int main() {
     first_visit_gets_no_back_pay();
     other_players_gain_is_shared_once();
@@ -200,6 +265,12 @@ int main() {
     same_amount_mining_is_never_filtered();
     gains_after_a_held_quest_wait_and_then_arrive();
     test_mode_keeps_own_quest_with_filter_on();
+    combat_is_ignored_unless_shared();
+    far_player_gets_the_kill_once_near_players_nothing();
+    separate_kills_are_shared_separately();
+    kill_split_over_two_visits_counts_once();
+    combat_share_uses_the_multiplier();
+    test_mode_credits_own_kill_once_more();
     if (failures == 0) {
         std::printf("ledger tests passed\n");
         return EXIT_SUCCESS;

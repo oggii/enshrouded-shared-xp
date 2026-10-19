@@ -25,6 +25,7 @@ constexpr Site kSites[] = {
     {"add_helper", &xpshare::Targets::add_helper, 0x1950f0},
     {"knowledge_system_ret", &xpshare::Targets::knowledge_system_ret, 0},
     {"grant_system_ret", &xpshare::Targets::grant_system_ret, 0},
+    {"combat", &xpshare::Targets::combat, 0xecbce},
 };
 
 }  // namespace

@@ -22,6 +22,9 @@ constexpr const char* kDefaults =
     "; 1 = each player also gets the other players' share, so double quest XP.\n"
     "; With 0, shared quest XP arrives about 5 seconds after the quest.\n"
     "DoubleQuestXp=0\n"
+    "; Combat XP: 0 = left to the game (only players near a kill get XP),\n"
+    "; 1 = players far from a kill also get the XP the players at the kill got.\n"
+    "ShareCombatXp=0\n"
     "Log=1\n"
     "; 1 = one log line per gain and per share (to check that it works), 0 = start-up and errors only.\n"
     "LogEveryShare=0\n"
@@ -50,6 +53,7 @@ Config load_config(const std::wstring& dir) {
     c.test_self_share = GetPrivateProfileIntW(L"xpshare", L"TestSelfShare", 0, path.c_str()) != 0;
     c.log_all_xp = GetPrivateProfileIntW(L"xpshare", L"LogAllXp", 0, path.c_str()) != 0;
     c.double_quest_xp = GetPrivateProfileIntW(L"xpshare", L"DoubleQuestXp", 0, path.c_str()) != 0;
+    c.share_combat_xp = GetPrivateProfileIntW(L"xpshare", L"ShareCombatXp", 0, path.c_str()) != 0;
     wchar_t buf[32];
     GetPrivateProfileStringW(L"xpshare", L"Multiplier", L"1.0", buf, 32, path.c_str());
     double m = wcstod(buf, nullptr);

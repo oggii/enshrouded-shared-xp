@@ -6,6 +6,8 @@
 
 #include <windows.h>
 
+#include <mutex>
+
 #include <safetyhook.hpp>
 
 #include "ecs.h"
@@ -23,19 +25,32 @@ SafetyHookMid g_mining;
 SafetyHookMid g_knowledge;
 SafetyHookMid g_commit_read;
 SafetyHookMid g_add_helper;
+SafetyHookMid g_combat;
 Targets g_targets;
 uint64_t g_last_prune_ms = 0;
+
+// Kill tracking for the combat hook: a new kill starts when the kill record changes or the
+// receiver index does not grow.
+std::mutex g_kill_mutex;
+uintptr_t g_last_kill_record = 0;
+uint64_t g_last_receiver_index = UINT64_MAX;
+uint64_t g_kill_id = 0;
 
 constexpr uint32_t kPendingXpField = 0x1d7dd102;
 constexpr uint64_t kMaxAgeMs = 120'000;
 
-void record(const char* hook, uint32_t entity, uint32_t amount, uint8_t type) {
+void record(const char* hook, uint32_t entity, uint32_t amount, uint8_t type, uint64_t kill = 0) {
     if (entity == 0) {
         log("SKIP   %s: no entity id for +%u XP (%s)", hook, amount, source_name(type));
         return;
     }
-    if (g_ledger.record(entity, amount, type, GetTickCount64()) && g_config.log_every_share) {
-        log("GAIN   entity %u +%u XP (%s, %s)", entity, amount, source_name(type), hook);
+    if (g_ledger.record(entity, amount, type, GetTickCount64(), kill) && g_config.log_every_share) {
+        if (kill != 0) {
+            log("GAIN   entity %u +%u XP (%s, %s, kill %llu)", entity, amount, source_name(type), hook,
+                static_cast<unsigned long long>(kill));
+        } else {
+            log("GAIN   entity %u +%u XP (%s, %s)", entity, amount, source_name(type), hook);
+        }
     }
 }
 
@@ -97,6 +112,27 @@ void on_add_helper(SafetyHookContext& ctx) {
     record(hook, entity, static_cast<uint32_t>(ctx.r8), type);  // r8d = the helper's amount
 }
 
+// Combat system (FUN_1400ec5c0): for each kill it loops over the receivers near it (list at
+// [rbp-0x80], count at [rbp-0x78], index r12) and adds r15d to each receiver's pending XP;
+// edi = the receiver's entity id, [rsp+0x48] = the kill's record (its XP value at +4).
+void on_combat(SafetyHookContext& ctx) {
+    uintptr_t kill_record = 0;
+    read_ptr(ctx.rsp + 0x48, kill_record);
+    uint64_t kill;
+    {
+        std::lock_guard lock(g_kill_mutex);
+        if (kill_record != g_last_kill_record || ctx.r12 <= g_last_receiver_index ||
+            g_last_receiver_index == UINT64_MAX) {
+            ++g_kill_id;
+        }
+        g_last_kill_record = kill_record;
+        g_last_receiver_index = ctx.r12;
+        kill = g_kill_id;
+    }
+    record("combat", static_cast<uint32_t>(ctx.rdi), static_cast<uint32_t>(ctx.r15),
+           static_cast<uint8_t>(Source::Combat), kill);
+}
+
 // Experience system (FUN_1400cedd0), once per player per tick: mov r15d, [rcx+rdx*4] reads
 // pending XP. Adding to pending here lets the game commit, level up and sync it.
 void on_commit_read(SafetyHookContext& ctx) {
@@ -145,13 +181,16 @@ bool install_hooks(const Targets& t, const Config& config, std::string& error) {
     g_config = config;
     g_targets = t;
     g_ledger.set_skip_joint_quests(!config.double_quest_xp);
+    g_ledger.set_share_combat(config.share_combat_xp);
     // The reader first, so the ledger knows every player before the first gain arrives.
     if (create(g_commit_read, t.commit_read, on_commit_read, "commit_read", error) &&
         create(g_mining, t.mining, on_mining, "mining", error) &&
         create(g_knowledge, t.knowledge, on_knowledge, "knowledge", error) &&
-        create(g_add_helper, t.add_helper, on_add_helper, "add_helper", error)) {
+        create(g_add_helper, t.add_helper, on_add_helper, "add_helper", error) &&
+        (!config.share_combat_xp || create(g_combat, t.combat, on_combat, "combat", error))) {
         return true;
     }
+    g_combat = {};
     g_add_helper = {};
     g_knowledge = {};
     g_mining = {};

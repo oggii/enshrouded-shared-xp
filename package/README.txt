@@ -1,4 +1,4 @@
-Enshrouded Shared XP 1.0.0
+Enshrouded Shared XP 1.1.0
 ==========================
 
 Server-side mod for Enshrouded dedicated servers. When one player earns non-combat XP
@@ -27,6 +27,10 @@ Set LogEveryShare=1 in xpshare.ini to log every share.
 QUESTS DONE TOGETHER
 DoubleQuestXp=0 (default): each player gets the quest XP once.
 DoubleQuestXp=1: each player also gets the other players' share (double quest XP).
+
+COMBAT XP
+ShareCombatXp=0 (default): left to the game, only players near a kill get XP.
+ShareCombatXp=1: players far from a kill get the XP the players at the kill got.
 
 UNINSTALL
 Stop the server and delete powrprof.dll, xpshare.ini and xpshare.log.

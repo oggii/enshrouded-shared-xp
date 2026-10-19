@@ -26,9 +26,10 @@ DWORD WINAPI start(LPVOID) {
     std::wstring dir = exe_dir();
     xpshare::Config config = xpshare::load_config(dir);
     xpshare::log_open(dir, config.log);
-    xpshare::log("xpshare %s starting: Enabled=%d Multiplier=%.2f DoubleQuestXp=%d real powrprof %s",
+    xpshare::log("xpshare %s starting: Enabled=%d Multiplier=%.2f DoubleQuestXp=%d ShareCombatXp=%d "
+                 "real powrprof %s",
                  kVersion, config.enabled, config.multiplier, config.double_quest_xp,
-                 g_real_loaded ? "loaded" : "MISSING");
+                 config.share_combat_xp, g_real_loaded ? "loaded" : "MISSING");
     if (!config.enabled) {
         xpshare::log("disabled in xpshare.ini, server runs without sharing");
         return 0;
@@ -41,7 +42,8 @@ DWORD WINAPI start(LPVOID) {
         xpshare::log("%s; server runs without sharing", error.c_str());
         return 0;
     }
-    xpshare::log("active: non-combat XP is shared with every online player%s",
+    xpshare::log("active: %s XP is shared with every online player%s",
+                 config.share_combat_xp ? "all" : "non-combat",
                  config.test_self_share ? " (TEST MODE: own XP is credited once more)" : "");
     return 0;
 }

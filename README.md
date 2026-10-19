@@ -6,7 +6,8 @@ A server-side mod for Enshrouded dedicated servers. When one player earns non-co
 other player who is online gets the same amount, wherever they are in the world.
 
 Shared sources: exploration, lore (books, notes), quests, mining and completed item sets.
-Combat XP is not shared, because the game already shares it with players near the kill.
+Combat XP is left to the game by default (it already shares it with players near the kill).
+With `ShareCombatXp=1` players far from a kill get the same XP as the players at the kill.
 
 Players need nothing. Only the server gets the mod.
 
@@ -64,13 +65,16 @@ You need file access to the server folder. On Linux hosts you also need a way to
 The mod writes `xpshare.log` next to the server exe. After a start it should show:
 
 ```
-xpshare 1.0.0 starting: Enabled=1 Multiplier=1.00 DoubleQuestXp=0 real powrprof loaded
+xpshare 1.1.0 starting: Enabled=1 Multiplier=1.00 DoubleQuestXp=0 ShareCombatXp=0 real powrprof loaded
 hooked commit_read at ...
 hooked mining      at ...
 hooked knowledge   at ...
 hooked add_helper  at ...
 active: non-combat XP is shared with every online player
 ```
+
+With `ShareCombatXp=1` there is one more line, `hooked combat`, and the last line says
+`active: all XP is shared with every online player`.
 
 To see every share, set `LogEveryShare=1` and restart. A mined ore then shows as:
 
@@ -96,6 +100,7 @@ The mod creates the file with these defaults if it is missing. Changes need a se
 | `DoubleQuestXp` | `0` | Quests finished together. `0`: each player gets the quest XP once (from the game); shared quest XP arrives about 5 seconds after the quest. `1`: each player also gets the other players' share, so double quest XP. |
 | `Log` | `1` | Write `xpshare.log`. |
 | `LogEveryShare` | `0` | `1` = one line per gain and per share. Useful to check it works; the log grows fast. |
+| `ShareCombatXp` | `0` | Combat XP. `0`: left to the game, only players near a kill get XP. `1`: every player who was not near the kill also gets XP for it, the same amount the players at the kill got (the largest, if they got different amounts), once per kill. Players at the kill get nothing extra. Arrives about 1 second after the kill. |
 | `TestSelfShare` | `0` | Solo test: `1` credits your own non-combat XP to you once more, so one player can check the mod. Not for normal play. |
 | `LogAllXp` | `0` | Diagnostics: logs every XP amount any player receives. |
 
@@ -106,7 +111,10 @@ The mod creates the file with these defaults if it is missing. Changes need a se
   `DoubleQuestXp=0` (default) the mod does not add the other players' share on top; with `1`
   it does, so double quest XP. The mod treats two quest gains of the same amount within 10
   seconds as the same quest.
-- **Combat XP** stays as the game handles it.
+- **Combat XP** stays as the game handles it unless `ShareCombatXp=1`. Then a player who is
+  mining while a friend fights elsewhere levels up with the friend instead of falling behind.
+  The game gives less XP per player when several fight together, and it scales XP with the
+  player's level; a far player gets the amount the players at the kill got.
 - **No network traffic.** The mod only changes how much XP the server gives; it opens no
   ports and contacts nothing.
 - **Antivirus.** Proxy DLLs like this one are sometimes flagged by heuristics. The full

@@ -18,6 +18,9 @@ struct Config {
     // 1: players who finish the same quest together also get each other's share (double
     // quest XP). 0: a player does not receive quest XP it just earned itself.
     bool double_quest_xp = false;
+    // 1: combat XP is shared too. Players who were not near a kill get the XP the players at
+    // the kill got (the largest amount, once per kill); players at the kill get nothing extra.
+    bool share_combat_xp = false;
 };
 
 // Reads xpshare.ini from `dir`; writes it with the defaults if it does not exist.
