@@ -1,5 +1,7 @@
 # Enshrouded Shared XP
 
+![Enshrouded Shared XP](nexus/banner.jpg)
+
 A server-side mod for Enshrouded dedicated servers. When one player earns non-combat XP, every
 other player who is online gets the same amount, wherever they are in the world.
 
@@ -62,7 +64,7 @@ You need file access to the server folder. On Linux hosts you also need a way to
 The mod writes `xpshare.log` next to the server exe. After a start it should show:
 
 ```
-xpshare 1.0.0 starting: Enabled=1 Multiplier=1.00 real powrprof loaded
+xpshare 1.0.0 starting: Enabled=1 Multiplier=1.00 DoubleQuestXp=0 real powrprof loaded
 hooked commit_read at ...
 hooked mining      at ...
 hooked knowledge   at ...
@@ -77,6 +79,9 @@ GAIN   entity 1 +10 XP (Mining, mining)
 SHARE  entity 2 +10 XP (pending 0 -> 10)
 ```
 
+A quest finished together (with `DoubleQuestXp=0`) shows as
+`JOINT  entity 2 skips 5 quest XP it earned itself`.
+
 Shared XP does not show the "+XP" popup in game (the game only shows it to the player who
 earned it). The receiver's XP number and level still go up.
 
@@ -88,6 +93,7 @@ The mod creates the file with these defaults if it is missing. Changes need a se
 |---|---|---|
 | `Enabled` | `1` | `0` turns the mod off; the server runs unmodded. |
 | `Multiplier` | `1.0` | Shared XP = the other player's gain × this value. `0.5` = half, `0` = no sharing. Range 0 to 10. |
+| `DoubleQuestXp` | `0` | Quests finished together. `0`: each player gets the quest XP once (from the game); shared quest XP arrives about 5 seconds after the quest. `1`: each player also gets the other players' share, so double quest XP. |
 | `Log` | `1` | Write `xpshare.log`. |
 | `LogEveryShare` | `0` | `1` = one line per gain and per share. Useful to check it works; the log grows fast. |
 | `TestSelfShare` | `0` | Solo test: `1` credits your own non-combat XP to you once more, so one player can check the mod. Not for normal play. |
@@ -96,8 +102,10 @@ The mod creates the file with these defaults if it is missing. Changes need a se
 ## Good to know
 
 - **Online only.** A player who is offline gets nothing for what others earned meanwhile.
-- **Quests done together.** If two players finish the same quest together, each gets the
-  quest XP from the game and also the other player's share, so double quest XP.
+- **Quests done together.** The game gives every player who finishes a quest its XP. With
+  `DoubleQuestXp=0` (default) the mod does not add the other players' share on top; with `1`
+  it does, so double quest XP. The mod treats two quest gains of the same amount within 10
+  seconds as the same quest.
 - **Combat XP** stays as the game handles it.
 - **No network traffic.** The mod only changes how much XP the server gives; it opens no
   ports and contacts nothing.

@@ -107,7 +107,12 @@ void on_commit_read(SafetyHookContext& ctx) {
         log("XP     entity %u receives %u XP (all sources, before sharing)", entity, *pending);
     }
     if (entity != 0) {
-        uint32_t owed = g_ledger.collect(entity, g_config.multiplier, now, g_config.test_self_share);
+        uint32_t skipped = 0;
+        uint32_t owed = g_ledger.collect(entity, g_config.multiplier, now, g_config.test_self_share,
+                                         &skipped);
+        if (skipped != 0 && g_config.log_every_share) {
+            log("JOINT  entity %u skips %u quest XP it earned itself", entity, skipped);
+        }
         if (owed != 0) {
             uint32_t before = *pending;
             *pending = before + owed;
@@ -139,6 +144,7 @@ bool create(SafetyHookMid& slot, uintptr_t target, safetyhook::MidHookFn fn, con
 bool install_hooks(const Targets& t, const Config& config, std::string& error) {
     g_config = config;
     g_targets = t;
+    g_ledger.set_skip_joint_quests(!config.double_quest_xp);
     // The reader first, so the ledger knows every player before the first gain arrives.
     if (create(g_commit_read, t.commit_read, on_commit_read, "commit_read", error) &&
         create(g_mining, t.mining, on_mining, "mining", error) &&

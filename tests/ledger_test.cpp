@@ -94,6 +94,94 @@ static void prune_drops_old_gains_and_players() {
     EXPECT_EQ(l.known_players(), 0u);
 }
 
+constexpr uint8_t kQuest = 3, kMining = 5;
+constexpr uint64_t kHold = Ledger::kQuestHoldMs;
+
+static void joint_quest_is_double_with_filter_off() {
+    Ledger l;
+    l.collect(A, 1.0, 0);
+    l.collect(B, 1.0, 0);
+    l.record(A, 5, kQuest, 1);
+    l.record(B, 5, kQuest, 1);
+    EXPECT_EQ(l.collect(A, 1.0, 2), 5u);
+    EXPECT_EQ(l.collect(B, 1.0, 2), 5u);
+}
+
+static void joint_quest_is_skipped_with_filter_on() {
+    Ledger l;
+    l.set_skip_joint_quests(true);
+    l.collect(A, 1.0, 0);
+    l.collect(B, 1.0, 0);
+    l.record(A, 5, kQuest, 1);
+    l.record(B, 5, kQuest, 1);
+    uint32_t skipped = 0;
+    EXPECT_EQ(l.collect(A, 1.0, 1 + kHold, false, &skipped), 0u);
+    EXPECT_EQ(skipped, 5u);
+    EXPECT_EQ(l.collect(B, 1.0, 1 + kHold), 0u);
+    EXPECT_EQ(l.collect(B, 1.0, 2 + kHold), 0u);
+}
+
+static void solo_quest_is_shared_after_the_hold() {
+    Ledger l;
+    l.set_skip_joint_quests(true);
+    l.collect(B, 1.0, 0);
+    l.record(A, 5, kQuest, 1);
+    EXPECT_EQ(l.collect(B, 1.0, kHold), 0u);  // still held
+    EXPECT_EQ(l.collect(B, 1.0, 1 + kHold), 5u);
+    EXPECT_EQ(l.collect(B, 1.0, 2 + kHold), 0u);
+}
+
+static void receivers_late_quest_gain_still_counts_as_joint() {
+    Ledger l;
+    l.set_skip_joint_quests(true);
+    l.collect(B, 1.0, 0);
+    l.record(A, 5, kQuest, 1);
+    EXPECT_EQ(l.collect(B, 1.0, 500), 0u);
+    l.record(B, 5, kQuest, 1'000);  // B's own quest XP arrives a second later
+    EXPECT_EQ(l.collect(B, 1.0, 1 + kHold), 0u);
+    EXPECT_EQ(l.collect(B, 1.0, 1'000 + kHold), 0u);
+}
+
+static void different_quest_amounts_are_both_shared() {
+    Ledger l;
+    l.set_skip_joint_quests(true);
+    l.collect(A, 1.0, 0);
+    l.collect(B, 1.0, 0);
+    l.record(A, 5, kQuest, 1);
+    l.record(B, 8, kQuest, 1);
+    EXPECT_EQ(l.collect(A, 1.0, 1 + kHold), 8u);
+    EXPECT_EQ(l.collect(B, 1.0, 1 + kHold), 5u);
+}
+
+static void same_amount_mining_is_never_filtered() {
+    Ledger l;
+    l.set_skip_joint_quests(true);
+    l.collect(A, 1.0, 0);
+    l.collect(B, 1.0, 0);
+    l.record(A, 10, kMining, 1);
+    l.record(B, 10, kMining, 1);
+    EXPECT_EQ(l.collect(A, 1.0, 2), 10u);
+    EXPECT_EQ(l.collect(B, 1.0, 2), 10u);
+}
+
+static void gains_after_a_held_quest_wait_and_then_arrive() {
+    Ledger l;
+    l.set_skip_joint_quests(true);
+    l.collect(B, 1.0, 0);
+    l.record(A, 5, kQuest, 1);
+    l.record(A, 10, kMining, 2);
+    EXPECT_EQ(l.collect(B, 1.0, 3), 0u);
+    EXPECT_EQ(l.collect(B, 1.0, 1 + kHold), 15u);
+}
+
+static void test_mode_keeps_own_quest_with_filter_on() {
+    Ledger l;
+    l.set_skip_joint_quests(true);
+    l.collect(A, 1.0, 0, true);
+    l.record(A, 5, kQuest, 1);
+    EXPECT_EQ(l.collect(A, 1.0, 1 + kHold, true), 5u);
+}
+
 int main() {
     first_visit_gets_no_back_pay();
     other_players_gain_is_shared_once();
@@ -104,6 +192,14 @@ int main() {
     multiplier_is_applied_and_floored();
     zero_multiplier_shares_nothing();
     prune_drops_old_gains_and_players();
+    joint_quest_is_double_with_filter_off();
+    joint_quest_is_skipped_with_filter_on();
+    solo_quest_is_shared_after_the_hold();
+    receivers_late_quest_gain_still_counts_as_joint();
+    different_quest_amounts_are_both_shared();
+    same_amount_mining_is_never_filtered();
+    gains_after_a_held_quest_wait_and_then_arrive();
+    test_mode_keeps_own_quest_with_filter_on();
     if (failures == 0) {
         std::printf("ledger tests passed\n");
         return EXIT_SUCCESS;

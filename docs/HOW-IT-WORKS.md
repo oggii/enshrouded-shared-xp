@@ -51,6 +51,11 @@ experience component's address is not stable (it moves on fast travel, for examp
    `Multiplier`. The game then commits it like any other XP, including level-ups and sync.
 3. A player seen for the first time gets nothing for the past. Gains and players not seen
    for 120 seconds are dropped.
+4. Joint quests (`DoubleQuestXp=0`, the default): there is no quest id in the XP event, so a
+   quest gain from another player is skipped for a receiver who recorded a quest gain of the
+   same amount within 10 seconds of it (`kJointWindowMs`). Quest gains are held 5 seconds
+   (`kQuestHoldMs`) before they are shared, so the receiver's own gain has time to arrive; a
+   receiver's later gains wait behind a held quest gain, they are delayed, never lost.
 
 All game memory reads go through SEH-guarded helpers (`src/memory.cpp`), so a bad pointer
 skips one gain instead of crashing the server.

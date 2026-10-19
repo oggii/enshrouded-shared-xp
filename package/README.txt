@@ -24,6 +24,10 @@ xpshare.log next to the server exe should end with
 "active: non-combat XP is shared with every online player".
 Set LogEveryShare=1 in xpshare.ini to log every share.
 
+QUESTS DONE TOGETHER
+DoubleQuestXp=0 (default): each player gets the quest XP once.
+DoubleQuestXp=1: each player also gets the other players' share (double quest XP).
+
 UNINSTALL
 Stop the server and delete powrprof.dll, xpshare.ini and xpshare.log.
 

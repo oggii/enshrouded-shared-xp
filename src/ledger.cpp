@@ -24,23 +24,55 @@ bool Ledger::record(uintptr_t player, uint32_t amount, uint8_t type, uint64_t no
         return false;
     }
     std::lock_guard lock(mutex_);
-    gains_.push_back({++seq_, player, amount, now_ms});
+    gains_.push_back({++seq_, player, amount, type, now_ms});
     return true;
 }
 
-uint32_t Ledger::collect(uintptr_t player, double multiplier, uint64_t now_ms, bool include_own) {
+void Ledger::set_skip_joint_quests(bool on) {
     std::lock_guard lock(mutex_);
+    skip_joint_quests_ = on;
+}
+
+bool Ledger::earned_same_quest(uintptr_t player, const Gain& other) const {
+    for (const Gain& own : gains_) {
+        if (own.player == player && own.seq != other.seq &&
+            own.type == static_cast<uint8_t>(Source::Quest) && own.amount == other.amount) {
+            uint64_t gap = own.at_ms > other.at_ms ? own.at_ms - other.at_ms : other.at_ms - own.at_ms;
+            if (gap <= kJointWindowMs) return true;
+        }
+    }
+    return false;
+}
+
+uint32_t Ledger::collect(uintptr_t player, double multiplier, uint64_t now_ms, bool include_own,
+                         uint32_t* skipped) {
+    std::lock_guard lock(mutex_);
+    if (skipped != nullptr) *skipped = 0;
     auto [it, first_visit] = visits_.try_emplace(player, Visit{seq_, now_ms});
     if (first_visit) {
         return 0;
     }
     uint64_t total = 0;
-    for (const Gain& gain : gains_) {
-        if (gain.seq > it->second.seq && (include_own || gain.player != player)) {
-            total += gain.amount;
+    uint64_t done = it->second.seq;
+    for (const Gain& gain : gains_) {  // in seq order
+        if (gain.seq <= it->second.seq) {
+            continue;
         }
+        const bool quest = gain.type == static_cast<uint8_t>(Source::Quest);
+        if (skip_joint_quests_ && quest && now_ms < gain.at_ms + kQuestHoldMs) {
+            break;  // too early to tell; this and every later gain wait for the next visit
+        }
+        done = gain.seq;
+        if (!include_own && gain.player == player) {
+            continue;
+        }
+        if (skip_joint_quests_ && quest && earned_same_quest(player, gain)) {
+            if (skipped != nullptr) *skipped += gain.amount;
+            continue;
+        }
+        total += gain.amount;
     }
-    it->second = {seq_, now_ms};
+    it->second = {done, now_ms};
     if (total == 0 || multiplier <= 0.0) {
         return 0;
     }

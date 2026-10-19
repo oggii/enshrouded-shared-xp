@@ -15,6 +15,9 @@ struct Config {
     // Diagnostics: log every pending XP the experience system commits, from any source,
     // to find gains no hook recorded.
     bool log_all_xp = false;
+    // 1: players who finish the same quest together also get each other's share (double
+    // quest XP). 0: a player does not receive quest XP it just earned itself.
+    bool double_quest_xp = false;
 };
 
 // Reads xpshare.ini from `dir`; writes it with the defaults if it does not exist.
