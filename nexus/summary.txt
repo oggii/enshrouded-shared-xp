@@ -1,0 +1,1 @@
+Server-side mod: non-combat XP (exploration, books, quests, mining, item sets) is shared with every online player, at any distance. Multiplier in an INI. Players install nothing. Enshrouded 1.0 dedicated server, Windows or Linux/Wine.

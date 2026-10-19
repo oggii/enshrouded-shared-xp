@@ -1,0 +1,58 @@
+[size=5][b]Shared XP for Dedicated Servers[/b][/size]
+
+When one player earns XP from exploring, reading books and notes, quests, mining or completing item sets, every other player who is online gets the same amount. Distance does not matter: you can mine in one corner of the map while your friend explores the other, and you both level up.
+
+Combat XP is not touched. The game already shares it with players near the kill.
+
+[b]Server-side only.[/b] Players install nothing and join as usual.
+
+[size=4][b]Requirements[/b][/size]
+[list]
+[*]Enshrouded 1.0 dedicated server, Steam build [b]25988414[/b] (October 2026)
+[*]Windows server, or Linux/Docker under Wine (tested with mornedhels/enshrouded-server:1.7.2-wine)
+[*]Access to the server folder (and to environment variables on Linux hosts)
+[/list]
+The mod checks the server build at every start. On any other build it does nothing and the server runs as usual. After a game update, wait for an updated version.
+
+[size=4][b]Installation[/b][/size]
+[b]Windows server[/b]
+[list=1]
+[*]Stop the server.
+[*]Copy [i]powrprof.dll[/i] and [i]xpshare.ini[/i] into the folder with [i]enshrouded_server.exe[/i].
+[*]Start the server.
+[/list]
+[b]Linux / Docker (Wine)[/b]
+[list=1]
+[*]Stop the container.
+[*]Copy [i]powrprof.dll[/i] and [i]xpshare.ini[/i] next to [i]enshrouded_server.exe[/i].
+[*]Add the environment variable [i]WINEDLLOVERRIDES=powrprof=n,b[/i].
+[*]Start the container.
+[/list]
+[i]xpshare.log[/i] next to the server exe should end with "active: non-combat XP is shared with every online player".
+
+[size=4][b]Settings (xpshare.ini)[/b][/size]
+[list]
+[*][b]Multiplier[/b] (default 1.0): shared XP = the other player's gain x this value. 0.5 = half.
+[*][b]Enabled[/b]: 0 turns the mod off.
+[*][b]LogEveryShare[/b]: 1 logs every gain and share, handy to check it works.
+[*][b]TestSelfShare[/b]: solo test, credits your own XP once more. Not for normal play.
+[/list]
+Restart the server after changes.
+
+[size=4][b]Good to know[/b][/size]
+[list]
+[*]Only players who are online receive shared XP. There is no catch-up for offline players.
+[*]Shared XP shows no "+XP" popup in game, but the XP bar and level go up.
+[*]Quests finished together give each player the quest XP plus the other's share.
+[*]The mod opens no ports and sends nothing anywhere.
+[/list]
+
+[size=4][b]Uninstall[/b][/size]
+Stop the server and delete powrprof.dll, xpshare.ini and xpshare.log.
+
+[size=4][b]Source code[/b][/size]
+Open source (MIT): [url=https://github.com/oggii/enshrouded-shared-xp]github.com/oggii/enshrouded-shared-xp[/url]
+Some antivirus tools flag proxy DLLs by heuristics. You can read the code and build the DLL yourself.
+
+[size=4][b]Credits[/b][/size]
+Inspired by the earlier XP share mod (Nexus #110). New implementation for Enshrouded 1.0. Hooks via SafetyHook and Zydis.
