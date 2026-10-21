@@ -17,6 +17,7 @@ struct Targets {
     // Combat system FUN_1400ec5c0, per receiver of a kill: add [r8+r9*4], r15d
     // (r15d = amount, edi = receiver entity id, r12 = index in the kill's receiver list).
     uintptr_t combat = 0;
+    const char* build = nullptr;  // label of the recognised server build, e.g. "26083076"
 };
 
 // Checks that the image mapped at `base` (the running server, or the selftest's mapping of an

@@ -6,6 +6,7 @@
 #include <windows.h>
 
 #include <cstdio>
+#include <cstring>
 #include <string>
 
 #include "scan.h"
@@ -15,17 +16,26 @@ namespace {
 struct Site {
     const char* name;
     uintptr_t xpshare::Targets::*field;
-    uintptr_t expected_rva;  // build 25988414; 0 = not checked
 };
 
 constexpr Site kSites[] = {
-    {"commit_read", &xpshare::Targets::commit_read, 0xcf018},
-    {"mining", &xpshare::Targets::mining, 0x226cbc},
-    {"knowledge", &xpshare::Targets::knowledge, 0x1b566a},
-    {"add_helper", &xpshare::Targets::add_helper, 0x1950f0},
-    {"knowledge_system_ret", &xpshare::Targets::knowledge_system_ret, 0},
-    {"grant_system_ret", &xpshare::Targets::grant_system_ret, 0},
-    {"combat", &xpshare::Targets::combat, 0xecbce},
+    {"commit_read", &xpshare::Targets::commit_read},
+    {"mining", &xpshare::Targets::mining},
+    {"knowledge", &xpshare::Targets::knowledge},
+    {"add_helper", &xpshare::Targets::add_helper},
+    {"knowledge_system_ret", &xpshare::Targets::knowledge_system_ret},
+    {"grant_system_ret", &xpshare::Targets::grant_system_ret},
+    {"combat", &xpshare::Targets::combat},
+};
+
+// Where each site sits in the builds that were analysed (RVAs, same order as kSites).
+struct Known {
+    const char* build;
+    uintptr_t rva[7];
+};
+constexpr Known kKnown[] = {
+    {"25988414", {0xcf018, 0x226cbc, 0x1b566a, 0x1950f0, 0x1b77e1, 0x1b6a7a, 0xecbce}},
+    {"26083076", {0xcfec8, 0x227b6c, 0x1b651a, 0x195fa0, 0x1b8691, 0x1b792a, 0xeda7e}},
 };
 
 }  // namespace
@@ -47,12 +57,17 @@ int wmain(int argc, wchar_t** argv) {
         std::printf("INACTIVE: %s\n", error.c_str());
         return 1;
     }
+    const Known* known = nullptr;
+    for (const Known& k : kKnown) {
+        if (std::strcmp(k.build, targets.build) == 0) known = &k;
+    }
+    std::printf("server build %s\n", targets.build);
     bool ok = true;
-    for (const Site& site : kSites) {
-        uintptr_t rva = targets.*site.field - reinterpret_cast<uintptr_t>(base);
-        bool match = site.expected_rva == 0 || rva == site.expected_rva;
+    for (size_t i = 0; i < std::size(kSites); ++i) {
+        uintptr_t rva = targets.*kSites[i].field - reinterpret_cast<uintptr_t>(base);
+        bool match = known == nullptr || rva == known->rva[i];
         ok = ok && match;
-        std::printf("%-21s rva 0x%llx%s\n", site.name, static_cast<unsigned long long>(rva),
+        std::printf("%-21s rva 0x%llx%s\n", kSites[i].name, static_cast<unsigned long long>(rva),
                     match ? "" : "  (UNEXPECTED)");
     }
     std::printf(ok ? "OK: all hook sites found\n" : "FAIL: a hook site moved\n");

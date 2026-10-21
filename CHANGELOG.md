@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.1 (2026-10-21)
+
+- Works on server build 26083076 (the 20 October update) as well as 25988414. Three hook
+  patterns contained call addresses that moved with the update; they now use wildcards, and
+  the add helper is taken from the call the two XP systems make. The log names the build.
+- The selftest knows the hook sites of both builds.
+
 ## 1.1.0 (2026-10-19)
 
 - `ShareCombatXp` (default 0): combat XP is shared too. Players far from a kill get the XP the

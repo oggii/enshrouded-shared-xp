@@ -15,7 +15,7 @@ Players need nothing. Only the server gets the mod.
 
 | | |
 |---|---|
-| Game | Enshrouded 1.0 dedicated server, Steam build **25988414** (October 2026) |
+| Game | Enshrouded 1.0 dedicated server, Steam builds **25988414** and **26083076** (October 2026) |
 | Windows server | tested |
 | Linux server under Wine (Docker image `mornedhels/enshrouded-server:1.7.2-wine`) | tested |
 | Proton-based images | should work with the same override, not tested |

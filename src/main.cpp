@@ -42,7 +42,7 @@ DWORD WINAPI start(LPVOID) {
         xpshare::log("%s; server runs without sharing", error.c_str());
         return 0;
     }
-    xpshare::log("active: %s XP is shared with every online player%s",
+    xpshare::log("active on server build %s: %s XP is shared with every online player%s", targets.build,
                  config.share_combat_xp ? "all" : "non-combat",
                  config.test_self_share ? " (TEST MODE: own XP is credited once more)" : "");
     return 0;

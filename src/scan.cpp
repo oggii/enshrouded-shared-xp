@@ -3,62 +3,101 @@
 #include <windows.h>
 
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <iterator>
-#include <span>
+#include <vector>
 
 namespace xpshare {
 
 namespace {
 
-// enshrouded_server.exe of Steam build 25988414 (Game Version SVN 1269579).
-constexpr DWORD kTimeDateStamp = 1792148062;
-constexpr DWORD kSizeOfImage = 0x1dcf000;
+// Builds of enshrouded_server.exe this mod was checked against. An unknown build is refused,
+// even if every pattern below still matched: the registers at a hook site are only known for
+// the builds somebody looked at.
+struct Build {
+    DWORD time_date_stamp;
+    DWORD size_of_image;
+    const char* label;
+};
+constexpr Build kBuilds[] = {
+    {1792148062, 0x1dcf000, "25988414"},  // 16 Oct 2026, Game Version SVN 1269579
+    {1792507668, 0x1dd1000, "26083076"},  // 20 Oct 2026
+};
 
+// Patterns are hex bytes; "??" matches anything (used for call targets and rip-relative
+// displacements, which move between builds while the surrounding code stays the same).
 struct Pattern {
     const char* name;
-    std::span<const uint8_t> bytes;
+    const char* text;
     size_t hook_offset;
 };
 
-constexpr uint8_t kMining[] = {0x0f, 0xb7, 0x4e, 0x04, 0x4c, 0x8b, 0xc3, 0x48, 0x03, 0xce,
-                               0x44, 0x01, 0x3c, 0x91, 0x48, 0x8d, 0x4c, 0x24, 0x30};
-constexpr uint8_t kKnowledge[] = {0x41, 0x0f, 0xb7, 0x4e, 0x04, 0x4c, 0x8b, 0xc3, 0x49,
-                                  0x03, 0xce, 0x01, 0x3c, 0x91, 0x48, 0x8d, 0x4d, 0xf7};
-constexpr uint8_t kCommitRead[] = {0x0f, 0xb7, 0x51, 0x0c, 0x0f, 0xb7, 0x4f, 0x04, 0x48,
-                                   0x03, 0xcf, 0x40, 0x32, 0xf6, 0x44, 0x8b, 0x3c, 0x91};
+constexpr const char* kMining = "0f b7 4e 04 4c 8b c3 48 03 ce 44 01 3c 91 48 8d 4c 24 30";
+constexpr const char* kKnowledge = "41 0f b7 4e 04 4c 8b c3 49 03 ce 01 3c 91 48 8d 4d f7";
+constexpr const char* kCommitRead = "0f b7 51 0c 0f b7 4f 04 48 03 cf 40 32 f6 44 8b 3c 91";
 
-// Entry of FUN_1401950f0 up to its first call; the "set" twin FUN_1401970f0 differs in the
-// call's rel32, so this only matches the "add" helper.
-constexpr uint8_t kAddHelper[] = {0x48, 0x89, 0x5c, 0x24, 0x08, 0x48, 0x89, 0x74, 0x24, 0x10, 0x57,
-                                  0x48, 0x83, 0xec, 0x30, 0x41, 0x8b, 0xf0, 0x48, 0x8b, 0xfa, 0x4c,
-                                  0x8b, 0xc2, 0x48, 0x8b, 0xd9, 0x41, 0x8b, 0xd1, 0x48, 0x8d, 0x4c,
-                                  0x24, 0x20, 0xe8, 0x28, 0xf8, 0x7e, 0x00, 0x0f, 0xb6, 0x4c};
-// The helper calls in FUN_1401b7530 and FUN_1401b67a0 (offset = the return address).
-constexpr uint8_t kKnowledgeSystemCall[] = {0x44, 0x8b, 0x0d, 0xe8, 0x1b, 0xa2, 0x00, 0x44,
-                                            0x8b, 0x45, 0x80, 0x48, 0x8b, 0x55, 0xd0, 0xe8,
-                                            0x0f, 0xd9, 0xfd, 0xff, 0x48, 0x8b, 0x7d, 0x20};
-constexpr uint8_t kGrantSystemCall[] = {0x44, 0x8b, 0x0d, 0x52, 0x29, 0xa2, 0x00, 0x48, 0x8b,
-                                        0xcf, 0x44, 0x8b, 0x45, 0xa8, 0x48, 0x8b, 0x55, 0x08,
-                                        0xe8, 0x76, 0xe6, 0xfd, 0xff, 0x48, 0x8b, 0x4d, 0x18};
+// Entry of the "add to field" helper (FUN_1401950f0 in 25988414) up to its first call. Its
+// "set" twin has the same bytes apart from the call target, so this pattern matches twice;
+// the right one is the function the two system calls below call.
+constexpr const char* kAddHelper =
+    "48 89 5c 24 08 48 89 74 24 10 57 48 83 ec 30 41 8b f0 48 8b fa 4c 8b c2 48 8b d9 41 8b d1 48 8d 4c 24 20 "
+    "e8 ?? ?? ?? ?? 0f b6 4c";
+// The helper calls in the knowledge system (FUN_1401b7530) and the grant system
+// (FUN_1401b67a0); the hook offset is the return address.
+constexpr const char* kKnowledgeSystemCall =
+    "44 8b 0d ?? ?? ?? ?? 44 8b 45 80 48 8b 55 d0 e8 ?? ?? ?? ?? 48 8b 7d 20";
+constexpr const char* kGrantSystemCall =
+    "44 8b 0d ?? ?? ?? ?? 48 8b cf 44 8b 45 a8 48 8b 55 08 e8 ?? ?? ?? ?? 48 8b 4d 18";
 
 // Combat XP add in FUN_1400ec5c0 and the call after it (FUN_1400a6dd0, the field update).
-constexpr uint8_t kCombat[] = {0x47, 0x01, 0x3c, 0x88, 0xe8, 0xf9, 0xa1, 0xfb,
-                               0xff, 0x4c, 0x8b, 0xb5, 0x80, 0x00, 0x00, 0x00};
+constexpr const char* kCombat = "47 01 3c 88 e8 ?? ?? ?? ?? 4c 8b b5 80 00 00 00";
 
-// Returns the single match + offset, 0 if there is none or more than one.
-uintptr_t find_unique(const uint8_t* begin, size_t size, const Pattern& p, int& count) {
-    count = 0;
-    uintptr_t hit = 0;
-    const size_t n = p.bytes.size();
-    for (size_t i = 0; i + n <= size; ++i) {
-        if (begin[i] == p.bytes[0] && std::memcmp(begin + i, p.bytes.data(), n) == 0) {
-            if (++count == 1) {
-                hit = reinterpret_cast<uintptr_t>(begin + i) + p.hook_offset;
-            }
+struct Parsed {
+    std::vector<uint8_t> bytes;
+    std::vector<bool> fixed;  // false = wildcard
+};
+
+Parsed parse(const char* text) {
+    Parsed p;
+    for (const char* s = text; *s != 0;) {
+        if (*s == ' ') { ++s; continue; }
+        if (s[0] == '?' && s[1] == '?') {
+            p.bytes.push_back(0);
+            p.fixed.push_back(false);
+        } else {
+            char hex[3] = {s[0], s[1], 0};
+            p.bytes.push_back(static_cast<uint8_t>(std::strtoul(hex, nullptr, 16)));
+            p.fixed.push_back(true);
         }
+        s += 2;
     }
-    return count == 1 ? hit : 0;
+    return p;
+}
+
+bool matches_at(const uint8_t* at, const Parsed& p) {
+    for (size_t k = 0; k < p.bytes.size(); ++k) {
+        if (p.fixed[k] && at[k] != p.bytes[k]) return false;
+    }
+    return true;
+}
+
+// Every match of the pattern inside [begin, begin + size), as addresses of the match start.
+std::vector<uintptr_t> find_all(const uint8_t* begin, size_t size, const Parsed& p) {
+    std::vector<uintptr_t> hits;
+    const size_t n = p.bytes.size();
+    if (n == 0 || n > size) return hits;
+    for (size_t i = 0; i + n <= size; ++i) {
+        if (matches_at(begin + i, p)) hits.push_back(reinterpret_cast<uintptr_t>(begin + i));
+    }
+    return hits;
+}
+
+// The target of the near call (e8 rel32) at `call`.
+uintptr_t call_target(uintptr_t call) {
+    int32_t rel = 0;
+    std::memcpy(&rel, reinterpret_cast<const void*>(call + 1), sizeof rel);
+    return call + 5 + static_cast<intptr_t>(rel);
 }
 
 }  // namespace
@@ -67,14 +106,20 @@ bool find_targets(const uint8_t* base, Targets& out, std::string& error) {
     auto dos = reinterpret_cast<const IMAGE_DOS_HEADER*>(base);
     auto nt = reinterpret_cast<const IMAGE_NT_HEADERS64*>(base + dos->e_lfanew);
     char buf[160];
-    if (nt->FileHeader.TimeDateStamp != kTimeDateStamp ||
-        nt->OptionalHeader.SizeOfImage != kSizeOfImage) {
+    const Build* build = nullptr;
+    for (const Build& b : kBuilds) {
+        if (nt->FileHeader.TimeDateStamp == b.time_date_stamp && nt->OptionalHeader.SizeOfImage == b.size_of_image) {
+            build = &b;
+        }
+    }
+    if (build == nullptr) {
         std::snprintf(buf, sizeof buf,
                       "unknown server build (TimeDateStamp %lu, SizeOfImage 0x%lx), not hooking",
                       nt->FileHeader.TimeDateStamp, nt->OptionalHeader.SizeOfImage);
         error = buf;
         return false;
     }
+    out.build = build->label;
     const IMAGE_SECTION_HEADER* text = nullptr;
     auto sec = IMAGE_FIRST_SECTION(nt);
     for (WORD i = 0; i < nt->FileHeader.NumberOfSections; ++i) {
@@ -89,29 +134,41 @@ bool find_targets(const uint8_t* base, Targets& out, std::string& error) {
     const uint8_t* code = base + text->VirtualAddress;
     const size_t size = text->Misc.VirtualSize;
 
+    // Sites that must match exactly once.
     const Pattern patterns[] = {
         {"mining", kMining, 10},
         {"knowledge", kKnowledge, 11},
         {"commit_read", kCommitRead, 14},
-        {"add_helper", kAddHelper, 0},
         {"knowledge_system_call", kKnowledgeSystemCall, 20},
         {"grant_system_call", kGrantSystemCall, 23},
         {"combat", kCombat, 0},
     };
-    uintptr_t* slots[] = {&out.mining,     &out.knowledge,            &out.commit_read,
-                          &out.add_helper, &out.knowledge_system_ret, &out.grant_system_ret,
-                          &out.combat};
+    uintptr_t* slots[] = {&out.mining, &out.knowledge, &out.commit_read, &out.knowledge_system_ret,
+                          &out.grant_system_ret, &out.combat};
     static_assert(std::size(patterns) == std::size(slots));
     for (size_t i = 0; i < std::size(patterns); ++i) {
-        int count = 0;
-        *slots[i] = find_unique(code, size, patterns[i], count);
-        if (*slots[i] == 0) {
-            std::snprintf(buf, sizeof buf, "pattern '%s' matched %d times (need exactly 1), not hooking",
-                          patterns[i].name, count);
+        std::vector<uintptr_t> hits = find_all(code, size, parse(patterns[i].text));
+        if (hits.size() != 1) {
+            std::snprintf(buf, sizeof buf, "pattern '%s' matched %zu times (need exactly 1), not hooking",
+                          patterns[i].name, hits.size());
             error = buf;
             return false;
         }
+        *slots[i] = hits[0] + patterns[i].hook_offset;
     }
+    // The add helper is whatever both system calls call (the call is the 5 bytes before each
+    // return address), and it has to look like the helper's entry.
+    uintptr_t helper = call_target(out.knowledge_system_ret - 5);
+    if (helper != call_target(out.grant_system_ret - 5)) {
+        error = "the knowledge and grant systems call different helpers, not hooking";
+        return false;
+    }
+    if (helper < reinterpret_cast<uintptr_t>(code) || helper + 64 > reinterpret_cast<uintptr_t>(code) + size ||
+        !matches_at(reinterpret_cast<const uint8_t*>(helper), parse(kAddHelper))) {
+        error = "the add helper does not look like the analysed one, not hooking";
+        return false;
+    }
+    out.add_helper = helper;
     return true;
 }
 
