@@ -54,14 +54,15 @@ constexpr const char* kGrantSystemCall =
 constexpr const char* kCombat = "47 01 3c 88 e8 ?? ?? ?? ?? 4c 8b b5 80 00 00 00";
 
 // The join/leave chat line in the player table update (FUN_1407b34c0): from
-// "cmp qword [rsi+0x60], 0" (chat queue present) to the instruction after the call of the chat
-// function. The loca tag of "joined" is the immediate of "mov r9d" at kJoinTagOffset.
+// "cmp qword [rsi+0x60], 0" (chat queue present) up to "mov r8b, 4"; the call of the chat
+// function follows at kJoinCallOffset and the next instruction at kJoinAfterOffset. The pattern
+// stops before the call because another mod (the live map) may have hooked it already. The loca
+// tag of "joined" is the immediate of "mov r9d" at kJoinTagOffset.
 constexpr const char* kJoinLine =
     "48 83 7e 60 00 74 ?? 41 8b 4e 0c e8 ?? ?? ?? ?? 49 8b 4e 48 4c 8d 05 ?? ?? ?? ?? 41 8b 16 85 c0 "
     "4c 89 85 ?? ?? ?? ?? 41 b9 ?? ?? ?? ?? 41 b8 ?? ?? ?? ?? c6 85 ?? ?? ?? ?? 00 45 0f 44 c1 "
     "4c 89 a5 ?? ?? ?? ?? 4c 8d 8d ?? ?? ?? ?? 4c 89 4c 24 40 4c 8d 8d ?? ?? ?? ?? 48 89 4c 24 38 "
-    "48 8d 8d ?? ?? ?? ?? 89 54 24 30 48 8b 56 60 89 44 24 28 44 89 44 24 20 41 b0 04 e8 ?? ?? ?? ?? "
-    "44 0f b7 0d ?? ?? ?? ??";
+    "48 8d 8d ?? ?? ?? ?? 89 54 24 30 48 8b 56 60 89 44 24 28 44 89 44 24 20 41 b0 04";
 constexpr size_t kJoinTagOffset = 0x29;
 constexpr size_t kJoinCallOffset = 0x78;
 constexpr size_t kJoinAfterOffset = 0x7d;
@@ -215,13 +216,14 @@ bool find_chat_sites(const uint8_t* base, ChatSites& out) {
     }
     if (code == nullptr) return false;
     std::vector<uintptr_t> hits = find_all(code, size, parse(kJoinLine));
-    if (hits.size() != 1) return false;
-    const uintptr_t at = hits[0];
-    const uintptr_t chat = call_target(at + kJoinCallOffset);
-    if (chat < reinterpret_cast<uintptr_t>(code) || chat + 64 > reinterpret_cast<uintptr_t>(code) + size ||
-        !matches_at(reinterpret_cast<const uint8_t*>(chat), parse(kChatPost))) {
-        return false;
-    }
+    std::vector<uintptr_t> chats = find_all(code, size, parse(kChatPost));
+    if (hits.size() != 1 || chats.size() != 1) return false;
+    const uintptr_t at = hits[0], chat = chats[0];
+    // e8 = the call itself (must go to the chat function); e9 = another mod hooked it already.
+    const uint8_t call_op = *reinterpret_cast<const uint8_t*>(at + kJoinCallOffset);
+    const uint8_t after_op = *reinterpret_cast<const uint8_t*>(at + kJoinAfterOffset);
+    if (call_op == 0xe8 ? call_target(at + kJoinCallOffset) != chat : call_op != 0xe9) return false;
+    if (after_op != 0x44 && after_op != 0xe9) return false;
     out.join_call = at + kJoinCallOffset;
     out.join_after = at + kJoinAfterOffset;
     out.chat_post = chat;

@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.3 (2026-10-22)
+
+- Works together with other mods that add a chat line at the same spot (the Enshrouded Live
+  Map): whichever mod starts second adds its hook on top of the first one, so both lines come.
+  Before, Shared XP could miss the join line when the other mod hooked it first; XP sharing was
+  never affected.
+
 ## 1.1.2 (2026-10-22)
 
 - Chat line on join: right after the server's "Player X joined." line, the chat shows
