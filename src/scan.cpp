@@ -53,14 +53,20 @@ constexpr const char* kGrantSystemCall =
 // Combat XP add in FUN_1400ec5c0 and the call after it (FUN_1400a6dd0, the field update).
 constexpr const char* kCombat = "47 01 3c 88 e8 ?? ?? ?? ?? 4c 8b b5 80 00 00 00";
 
-// Optional, for the chat line: the player table update (FUN_1407b34c0) a few instructions
-// after its entry, at "movzx ebx, byte [rsi+0x18a8]" with rsi = the player manager (other
-// mods may hook the entry itself), and the entry of the function that queues a chat line
-// (FUN_140908ce0).
-constexpr const char* kPlayerTable =
-    "44 0f 29 40 88 48 8b f1 44 0f 29 88 78 ff ff ff 44 0f 29 90 68 ff ff ff e8 ?? ?? ?? ?? 48 8b 51 10 "
-    "48 8d 8d c0 04 00 00 e8 ?? ?? ?? ?? 0f b6 9e a8 18 00 00 48 8b 46 28 88 9d c8 09 00 00";
-constexpr size_t kPlayerTableHook = 45;
+// The join/leave chat line in the player table update (FUN_1407b34c0): from
+// "cmp qword [rsi+0x60], 0" (chat queue present) to the instruction after the call of the chat
+// function. The loca tag of "joined" is the immediate of "mov r9d" at kJoinTagOffset.
+constexpr const char* kJoinLine =
+    "48 83 7e 60 00 74 ?? 41 8b 4e 0c e8 ?? ?? ?? ?? 49 8b 4e 48 4c 8d 05 ?? ?? ?? ?? 41 8b 16 85 c0 "
+    "4c 89 85 ?? ?? ?? ?? 41 b9 ?? ?? ?? ?? 41 b8 ?? ?? ?? ?? c6 85 ?? ?? ?? ?? 00 45 0f 44 c1 "
+    "4c 89 a5 ?? ?? ?? ?? 4c 8d 8d ?? ?? ?? ?? 4c 89 4c 24 40 4c 8d 8d ?? ?? ?? ?? 48 89 4c 24 38 "
+    "48 8d 8d ?? ?? ?? ?? 89 54 24 30 48 8b 56 60 89 44 24 28 44 89 44 24 20 41 b0 04 e8 ?? ?? ?? ?? "
+    "44 0f b7 0d ?? ?? ?? ??";
+constexpr size_t kJoinTagOffset = 0x29;
+constexpr size_t kJoinCallOffset = 0x78;
+constexpr size_t kJoinAfterOffset = 0x7d;
+// Entry of the chat function FUN_140908ce0(out, chat, type, {text, length}*, locaTag1,
+// locaTag2, playerHandle, accountIdHash, {value, has}*).
 constexpr const char* kChatPost =
     "40 55 56 41 54 41 55 41 57 48 83 ec 30 49 8b 41 08 33 ed 4d 8b f9 45 0f b6 e0 48 8b f2 4c 8b e9 "
     "48 3d 00 04 00 00 76 16";
@@ -181,11 +187,45 @@ bool find_targets(const uint8_t* base, Targets& out, std::string& error) {
         return false;
     }
     out.add_helper = helper;
-    // Optional sites: a miss only turns the chat line off.
-    std::vector<uintptr_t> players = find_all(code, size, parse(kPlayerTable));
-    std::vector<uintptr_t> chat = find_all(code, size, parse(kChatPost));
-    out.player_table = players.size() == 1 ? players[0] + kPlayerTableHook : 0;
-    out.chat_post = chat.size() == 1 ? chat[0] : 0;
+    return true;
+}
+
+bool known_build(const uint8_t* base) {
+    auto dos = reinterpret_cast<const IMAGE_DOS_HEADER*>(base);
+    auto nt = reinterpret_cast<const IMAGE_NT_HEADERS64*>(base + dos->e_lfanew);
+    for (const Build& b : kBuilds) {
+        if (nt->FileHeader.TimeDateStamp == b.time_date_stamp && nt->OptionalHeader.SizeOfImage == b.size_of_image) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool find_chat_sites(const uint8_t* base, ChatSites& out) {
+    auto dos = reinterpret_cast<const IMAGE_DOS_HEADER*>(base);
+    auto nt = reinterpret_cast<const IMAGE_NT_HEADERS64*>(base + dos->e_lfanew);
+    auto sec = IMAGE_FIRST_SECTION(nt);
+    const uint8_t* code = nullptr;
+    size_t size = 0;
+    for (WORD i = 0; i < nt->FileHeader.NumberOfSections; ++i) {
+        if (std::memcmp(sec[i].Name, ".text", 5) == 0) {
+            code = base + sec[i].VirtualAddress;
+            size = sec[i].Misc.VirtualSize;
+        }
+    }
+    if (code == nullptr) return false;
+    std::vector<uintptr_t> hits = find_all(code, size, parse(kJoinLine));
+    if (hits.size() != 1) return false;
+    const uintptr_t at = hits[0];
+    const uintptr_t chat = call_target(at + kJoinCallOffset);
+    if (chat < reinterpret_cast<uintptr_t>(code) || chat + 64 > reinterpret_cast<uintptr_t>(code) + size ||
+        !matches_at(reinterpret_cast<const uint8_t*>(chat), parse(kChatPost))) {
+        return false;
+    }
+    out.join_call = at + kJoinCallOffset;
+    out.join_after = at + kJoinAfterOffset;
+    out.chat_post = chat;
+    std::memcpy(&out.join_tag, reinterpret_cast<const void*>(at + kJoinTagOffset), sizeof out.join_tag);
     return true;
 }
 

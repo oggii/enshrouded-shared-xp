@@ -91,19 +91,23 @@ skips one gain instead of crashing the server.
 
 The server queues chat lines with FUN_140908ce0(out, chat, type, {text, length}*, locaTag1,
 locaTag2, playerHandle, accountIdHash, {value, has}*) (RVA 0x908ce0 in 25988414, 0x90b330 in
-26083076). It uses it itself for "Player X joined." (type 4 with a loca tag). The queue is the
-player manager +0x60 (0 when text chat is off) and goes to every connected client.
+26083076). Its player table update FUN_1407b34c0 calls it for "Player X joined." and
+"Player X left." (type 4, loca tag 0x2fec0cdf for joined, the other tag for left), with the chat
+queue in rdx and the stack arguments [rsp+0x20] loca tag, [rsp+0x30] player handle,
+[rsp+0x38] account id hash.
 
 Checked in game on build 26083076 (22 Oct 2026) with a probe that sent each type: lines without
 a valid player handle are dropped by the client; type 0 shows as "Name: text" (player chat),
-type 2 as "Name set a ping.", type 4 with no loca tag as the plain text without a name. The mod
-sends type 4 with no loca tag and the joining player's handle and account hash.
+type 2 as "Name set a ping.", type 4 with no loca tag as the plain text without a name.
 
-The hook sits in the player table update FUN_1407b34c0 at "movzx ebx, byte [rsi+0x18a8]"
-(RVA 0x7b3508 / 0x7b5848), where rsi is the player manager; it is a few instructions after the
-entry so that another mod hooking the entry does not hide it. Every 250 ms it reads the slots
-(manager +0x1e0, 0x148 bytes each: +0x0 handle, +0xA state, 3 = in game, +0x18 entity id,
-+0x48 account id hash). A slot whose entity changes to a new non-zero id is a join; the line is
-sent 8 seconds later if that player is still in game (src/join_watch.cpp, tested in
-tests/join_watch_test.cpp). Both sites are optional: if a pattern does not match, only the chat
-line is off.
+The mod hooks that call (RVA 0x7b466d / 0x7b69ad) and the instruction after it. At the call it
+keeps the chat queue, handle and account if the loca tag is the "joined" tag (read from the
+"mov r9d" immediate inside the same pattern, so it is not hard-coded); after the call it queues
+its own line, type 4 with no loca tag, with those values. The line therefore always comes right
+after the game's own join line, and nothing depends on the layout of the player table.
+
+The join line has its own pattern (with wildcards for addresses and the loca tags) and is looked
+for on every server build, also on builds the XP sites are not known for; the call in it must go
+to a function that starts like FUN_140908ce0. That is how the mod can say "NOT active" after a game
+update: the XP hooks stay off, only the chat line is installed. If the pattern does not match
+(a much changed build), there is no line at all.

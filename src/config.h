@@ -23,6 +23,9 @@ struct Config {
     bool share_combat_xp = false;
     // 1: one chat line "Shared XP ... is active" when a player joins.
     bool announce_in_chat = true;
+    // Test only: behave as on a server build the mod does not support (no XP hooks, the
+    // chat line says the mod is not active).
+    bool test_unknown_build = false;
 };
 
 // Reads xpshare.ini from `dir`; writes it with the defaults if it does not exist.

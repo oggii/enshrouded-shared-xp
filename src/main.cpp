@@ -2,6 +2,7 @@
 // Loaded by the server as powrprof.dll (Wine: WINEDLLOVERRIDES="powrprof=n,b").
 #include <windows.h>
 
+#include <cstdio>
 #include <string>
 
 #include "announce.h"
@@ -38,15 +39,36 @@ DWORD WINAPI start(LPVOID) {
     xpshare::Targets targets;
     std::string error;
     auto base = reinterpret_cast<const uint8_t*>(GetModuleHandleW(nullptr));
-    if (!xpshare::find_targets(base, targets, error) ||
-        !xpshare::install_hooks(targets, config, error)) {
+    bool active = !config.test_unknown_build && xpshare::find_targets(base, targets, error) &&
+                  xpshare::install_hooks(targets, config, error);
+    char line[200];
+    if (!active) {
+        if (config.test_unknown_build) error = "TestUnknownBuild=1: acting as on an unknown server build, not hooking";
         xpshare::log("%s; server runs without sharing", error.c_str());
+        if (config.announce_in_chat) {
+            bool updated = config.test_unknown_build || !xpshare::known_build(base);
+            if (updated) {
+                std::snprintf(line, sizeof line,
+                              "Shared XP %s is NOT active: the server was updated and this version does not "
+                              "support it yet. XP is not shared. Look for an update on Nexus Mods.",
+                              kVersion);
+            } else {
+                std::snprintf(line, sizeof line,
+                              "Shared XP %s is NOT active on this server (see xpshare.log). XP is not shared.",
+                              kVersion);
+            }
+            xpshare::install_announce(base, line);
+        }
         return 0;
     }
     xpshare::log("active on server build %s: %s XP is shared with every online player%s", targets.build,
                  config.share_combat_xp ? "all" : "non-combat",
                  config.test_self_share ? " (TEST MODE: own XP is credited once more)" : "");
-    if (config.announce_in_chat) xpshare::install_announce(targets, config, kVersion);
+    if (config.announce_in_chat) {
+        std::snprintf(line, sizeof line, "Shared XP %s is active: %s XP is shared with everyone online.", kVersion,
+                      config.share_combat_xp ? "all" : "non-combat");
+        xpshare::install_announce(base, line);
+    }
     return 0;
 }
 

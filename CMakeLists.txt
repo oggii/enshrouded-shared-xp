@@ -15,7 +15,7 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(safetyhook)
 
-add_library(xpshare_core STATIC src/ledger.cpp src/scan.cpp src/join_watch.cpp)
+add_library(xpshare_core STATIC src/ledger.cpp src/scan.cpp)
 target_include_directories(xpshare_core PUBLIC src)
 
 # The DLL is named powrprof.dll because the server loads it in place of the real one.
@@ -46,7 +46,3 @@ target_link_libraries(ledger_test PRIVATE xpshare_core)
 
 enable_testing()
 add_test(NAME ledger COMMAND ledger_test)
-
-add_executable(join_watch_test tests/join_watch_test.cpp)
-target_link_libraries(join_watch_test PRIVATE xpshare_core)
-add_test(NAME join_watch COMMAND join_watch_test)

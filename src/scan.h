@@ -17,9 +17,6 @@ struct Targets {
     // Combat system FUN_1400ec5c0, per receiver of a kill: add [r8+r9*4], r15d
     // (r15d = amount, edi = receiver entity id, r12 = index in the kill's receiver list).
     uintptr_t combat = 0;
-    // Optional (chat line on join; 0 = not found, sharing works anyway):
-    uintptr_t player_table = 0;  // inside the player table update, rsi = player manager
-    uintptr_t chat_post = 0;     // the server's "queue a chat line" function
     const char* build = nullptr;  // label of the recognised server build, e.g. "26083076"
 };
 
@@ -27,5 +24,22 @@ struct Targets {
 // exe on disk) is the analysed build and finds each hook site by a pattern that must match
 // exactly once. On failure `error` says why and nothing should be hooked.
 bool find_targets(const uint8_t* base, Targets& out, std::string& error);
+
+// True if the image is one of the builds the XP sites were checked against.
+bool known_build(const uint8_t* base);
+
+// The server's own "Player X joined." chat line, sent from the player table update
+// (FUN_1407b34c0). The mod sends its line right after it, to the same chat queue and with the
+// same sender. Found by its own pattern on ANY build (the call must go to a function that
+// looks like the chat function), so a server build the mod does not support can still say
+// so in chat. Nothing here depends on the XP sites.
+struct ChatSites {
+    uintptr_t join_call = 0;   // call chat_post: rdx = chat queue, [rsp+0x20] = loca tag,
+                               // [rsp+0x30] = player handle, [rsp+0x38] = account id hash
+    uintptr_t join_after = 0;  // the instruction after that call
+    uintptr_t chat_post = 0;   // FUN_140908ce0, queues a chat line for every client
+    uint32_t join_tag = 0;     // loca tag of "Player X joined." (the same call sends "left")
+};
+bool find_chat_sites(const uint8_t* base, ChatSites& out);
 
 }  // namespace xpshare
