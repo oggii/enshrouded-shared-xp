@@ -4,6 +4,7 @@
 
 #include <string>
 
+#include "announce.h"
 #include "config.h"
 #include "hooks.h"
 #include "log.h"
@@ -27,9 +28,9 @@ DWORD WINAPI start(LPVOID) {
     xpshare::Config config = xpshare::load_config(dir);
     xpshare::log_open(dir, config.log);
     xpshare::log("xpshare %s starting: Enabled=%d Multiplier=%.2f DoubleQuestXp=%d ShareCombatXp=%d "
-                 "real powrprof %s",
+                 "AnnounceInChat=%d real powrprof %s",
                  kVersion, config.enabled, config.multiplier, config.double_quest_xp,
-                 config.share_combat_xp, g_real_loaded ? "loaded" : "MISSING");
+                 config.share_combat_xp, config.announce_in_chat, g_real_loaded ? "loaded" : "MISSING");
     if (!config.enabled) {
         xpshare::log("disabled in xpshare.ini, server runs without sharing");
         return 0;
@@ -45,6 +46,7 @@ DWORD WINAPI start(LPVOID) {
     xpshare::log("active on server build %s: %s XP is shared with every online player%s", targets.build,
                  config.share_combat_xp ? "all" : "non-combat",
                  config.test_self_share ? " (TEST MODE: own XP is credited once more)" : "");
+    if (config.announce_in_chat) xpshare::install_announce(targets, config, kVersion);
     return 0;
 }
 

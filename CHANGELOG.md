@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.1.2 (2026-10-22)
+
+- Chat line on join: when a player joins, the server chat shows
+  "Shared XP 1.1.2 is active: non-combat XP is shared with everyone online." (or "all XP"
+  with `ShareCombatXp=1`). No line after joining means the mod is off, for example after a
+  game update your host installed. Asked for on Nexus by a player on a rented server.
+- `AnnounceInChat` (default 1): set 0 to turn the line off.
+- The line goes to everyone online, once per player who joins. It needs text chat to be
+  enabled on the server; with text chat off the mod logs that and stays quiet.
+- If the chat sites are not found, only the line is off; XP sharing works as before.
+- The selftest checks the two new sites in both server builds.
+
 ## 1.1.1 (2026-10-21)
 
 - Works on server build 26083076 (the 20 October update) as well as 25988414. Three hook

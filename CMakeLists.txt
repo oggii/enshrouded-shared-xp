@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.28)
-project(enshrouded_shared_xp VERSION 1.1.1 LANGUAGES CXX ASM_MASM)
+project(enshrouded_shared_xp VERSION 1.1.2 LANGUAGES CXX ASM_MASM)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -15,7 +15,7 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(safetyhook)
 
-add_library(xpshare_core STATIC src/ledger.cpp src/scan.cpp)
+add_library(xpshare_core STATIC src/ledger.cpp src/scan.cpp src/join_watch.cpp)
 target_include_directories(xpshare_core PUBLIC src)
 
 # The DLL is named powrprof.dll because the server loads it in place of the real one.
@@ -24,6 +24,7 @@ add_library(powrprof SHARED
     src/config.cpp
     src/log.cpp
     src/hooks.cpp
+    src/announce.cpp
     src/memory.cpp
     src/ecs.cpp
     src/proxy.cpp
@@ -45,3 +46,7 @@ target_link_libraries(ledger_test PRIVATE xpshare_core)
 
 enable_testing()
 add_test(NAME ledger COMMAND ledger_test)
+
+add_executable(join_watch_test tests/join_watch_test.cpp)
+target_link_libraries(join_watch_test PRIVATE xpshare_core)
+add_test(NAME join_watch COMMAND join_watch_test)

@@ -26,16 +26,18 @@ constexpr Site kSites[] = {
     {"knowledge_system_ret", &xpshare::Targets::knowledge_system_ret},
     {"grant_system_ret", &xpshare::Targets::grant_system_ret},
     {"combat", &xpshare::Targets::combat},
+    {"player_table", &xpshare::Targets::player_table},
+    {"chat_post", &xpshare::Targets::chat_post},
 };
 
 // Where each site sits in the builds that were analysed (RVAs, same order as kSites).
 struct Known {
     const char* build;
-    uintptr_t rva[7];
+    uintptr_t rva[9];
 };
 constexpr Known kKnown[] = {
-    {"25988414", {0xcf018, 0x226cbc, 0x1b566a, 0x1950f0, 0x1b77e1, 0x1b6a7a, 0xecbce}},
-    {"26083076", {0xcfec8, 0x227b6c, 0x1b651a, 0x195fa0, 0x1b8691, 0x1b792a, 0xeda7e}},
+    {"25988414", {0xcf018, 0x226cbc, 0x1b566a, 0x1950f0, 0x1b77e1, 0x1b6a7a, 0xecbce, 0x7b3508, 0x908ce0}},
+    {"26083076", {0xcfec8, 0x227b6c, 0x1b651a, 0x195fa0, 0x1b8691, 0x1b792a, 0xeda7e, 0x7b5848, 0x90b330}},
 };
 
 }  // namespace

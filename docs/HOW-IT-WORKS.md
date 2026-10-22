@@ -86,3 +86,24 @@ skips one gain instead of crashing the server.
    searched by their instruction sequences) and update the pattern, offset and the frame
    offsets in `src/hooks.cpp`.
 4. Test on a test server with two players and `LogEveryShare=1` before releasing.
+
+## Chat line on join (1.1.2)
+
+The server queues chat lines with FUN_140908ce0(out, chat, type, {text, length}*, locaTag1,
+locaTag2, playerHandle, accountIdHash, {value, has}*) (RVA 0x908ce0 in 25988414, 0x90b330 in
+26083076). It uses it itself for "Player X joined." (type 4 with a loca tag). The queue is the
+player manager +0x60 (0 when text chat is off) and goes to every connected client.
+
+Checked in game on build 26083076 (22 Oct 2026) with a probe that sent each type: lines without
+a valid player handle are dropped by the client; type 0 shows as "Name: text" (player chat),
+type 2 as "Name set a ping.", type 4 with no loca tag as the plain text without a name. The mod
+sends type 4 with no loca tag and the joining player's handle and account hash.
+
+The hook sits in the player table update FUN_1407b34c0 at "movzx ebx, byte [rsi+0x18a8]"
+(RVA 0x7b3508 / 0x7b5848), where rsi is the player manager; it is a few instructions after the
+entry so that another mod hooking the entry does not hide it. Every 250 ms it reads the slots
+(manager +0x1e0, 0x148 bytes each: +0x0 handle, +0xA state, 3 = in game, +0x18 entity id,
++0x48 account id hash). A slot whose entity changes to a new non-zero id is a join; the line is
+sent 8 seconds later if that player is still in game (src/join_watch.cpp, tested in
+tests/join_watch_test.cpp). Both sites are optional: if a pattern does not match, only the chat
+line is off.

@@ -11,6 +11,9 @@ With `ShareCombatXp=1` players far from a kill get the same XP as the players at
 
 Players need nothing. Only the server gets the mod.
 
+When a player joins, the server chat shows `Shared XP 1.1.2 is active: ...`, so everybody can
+see in game that the mod is running (`AnnounceInChat=0` turns it off).
+
 ## Compatibility
 
 | | |
@@ -62,19 +65,25 @@ You need file access to the server folder. On Linux hosts you also need a way to
 
 ## Check that it works
 
+In game: a few seconds after you join, the chat shows
+`Shared XP 1.1.2 is active: non-combat XP is shared with everyone online.` No line means the
+mod is not running; `xpshare.log` says why (after a game update usually `unknown server build`).
+
 The mod writes `xpshare.log` next to the server exe. After a start it should show:
 
 ```
-xpshare 1.1.0 starting: Enabled=1 Multiplier=1.00 DoubleQuestXp=0 ShareCombatXp=0 real powrprof loaded
+xpshare 1.1.2 starting: Enabled=1 Multiplier=1.00 DoubleQuestXp=0 ShareCombatXp=0 AnnounceInChat=1 real powrprof loaded
 hooked commit_read at ...
 hooked mining      at ...
 hooked knowledge   at ...
 hooked add_helper  at ...
-active: non-combat XP is shared with every online player
+active on server build 26083076: non-combat XP is shared with every online player
+hooked players     at ... (chat line when a player joins)
 ```
 
 With `ShareCombatXp=1` there is one more line, `hooked combat`, and the last line says
-`active: all XP is shared with every online player`.
+`active on server build ...: all XP is shared with every online player`. Each chat line is
+logged as `announce: chat line for player handle ...`.
 
 To see every share, set `LogEveryShare=1` and restart. A mined ore then shows as:
 
@@ -101,6 +110,7 @@ The mod creates the file with these defaults if it is missing. Changes need a se
 | `Log` | `1` | Write `xpshare.log`. |
 | `LogEveryShare` | `0` | `1` = one line per gain and per share. Useful to check it works; the log grows fast. |
 | `ShareCombatXp` | `0` | Combat XP. `0`: left to the game, only players near a kill get XP. `1`: every player who was not near the kill also gets XP for it, the same amount the players at the kill got (the largest, if they got different amounts), once per kill. Players at the kill get nothing extra. Arrives about 1 second after the kill. |
+| `AnnounceInChat` | `1` | `1`: when a player joins, the chat shows one line that the mod is active (everyone online sees it). Needs text chat enabled on the server. `0`: no line. |
 | `TestSelfShare` | `0` | Solo test: `1` credits your own non-combat XP to you once more, so one player can check the mod. Not for normal play. |
 | `LogAllXp` | `0` | Diagnostics: logs every XP amount any player receives. |
 

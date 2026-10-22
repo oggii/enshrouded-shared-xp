@@ -21,6 +21,8 @@ struct Config {
     // 1: combat XP is shared too. Players who were not near a kill get the XP the players at
     // the kill got (the largest amount, once per kill); players at the kill get nothing extra.
     bool share_combat_xp = false;
+    // 1: one chat line "Shared XP ... is active" when a player joins.
+    bool announce_in_chat = true;
 };
 
 // Reads xpshare.ini from `dir`; writes it with the defaults if it does not exist.

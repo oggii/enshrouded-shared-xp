@@ -53,6 +53,18 @@ constexpr const char* kGrantSystemCall =
 // Combat XP add in FUN_1400ec5c0 and the call after it (FUN_1400a6dd0, the field update).
 constexpr const char* kCombat = "47 01 3c 88 e8 ?? ?? ?? ?? 4c 8b b5 80 00 00 00";
 
+// Optional, for the chat line: the player table update (FUN_1407b34c0) a few instructions
+// after its entry, at "movzx ebx, byte [rsi+0x18a8]" with rsi = the player manager (other
+// mods may hook the entry itself), and the entry of the function that queues a chat line
+// (FUN_140908ce0).
+constexpr const char* kPlayerTable =
+    "44 0f 29 40 88 48 8b f1 44 0f 29 88 78 ff ff ff 44 0f 29 90 68 ff ff ff e8 ?? ?? ?? ?? 48 8b 51 10 "
+    "48 8d 8d c0 04 00 00 e8 ?? ?? ?? ?? 0f b6 9e a8 18 00 00 48 8b 46 28 88 9d c8 09 00 00";
+constexpr size_t kPlayerTableHook = 45;
+constexpr const char* kChatPost =
+    "40 55 56 41 54 41 55 41 57 48 83 ec 30 49 8b 41 08 33 ed 4d 8b f9 45 0f b6 e0 48 8b f2 4c 8b e9 "
+    "48 3d 00 04 00 00 76 16";
+
 struct Parsed {
     std::vector<uint8_t> bytes;
     std::vector<bool> fixed;  // false = wildcard
@@ -169,6 +181,11 @@ bool find_targets(const uint8_t* base, Targets& out, std::string& error) {
         return false;
     }
     out.add_helper = helper;
+    // Optional sites: a miss only turns the chat line off.
+    std::vector<uintptr_t> players = find_all(code, size, parse(kPlayerTable));
+    std::vector<uintptr_t> chat = find_all(code, size, parse(kChatPost));
+    out.player_table = players.size() == 1 ? players[0] + kPlayerTableHook : 0;
+    out.chat_post = chat.size() == 1 ? chat[0] : 0;
     return true;
 }
 

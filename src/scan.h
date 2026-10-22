@@ -17,6 +17,9 @@ struct Targets {
     // Combat system FUN_1400ec5c0, per receiver of a kill: add [r8+r9*4], r15d
     // (r15d = amount, edi = receiver entity id, r12 = index in the kill's receiver list).
     uintptr_t combat = 0;
+    // Optional (chat line on join; 0 = not found, sharing works anyway):
+    uintptr_t player_table = 0;  // inside the player table update, rsi = player manager
+    uintptr_t chat_post = 0;     // the server's "queue a chat line" function
     const char* build = nullptr;  // label of the recognised server build, e.g. "26083076"
 };
 
