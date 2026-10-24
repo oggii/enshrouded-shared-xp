@@ -11,9 +11,12 @@ With `ShareCombatXp=1` players far from a kill get the same XP as the players at
 
 Players need nothing. Only the server gets the mod.
 
-When a player joins, the server chat shows `Shared XP 1.1.2 is active: ...`, so everybody can
+Sister mod: **[Live Map](https://github.com/oggii/enshrouded-livemap)** serves a live web map of
+your server in the game's own look, also server-side only ([Nexus](https://www.nexusmods.com/enshrouded/mods/209)).
+
+When a player joins, the server chat shows `Shared XP 1.1.3 is active: ...`, so everybody can
 see in game that the mod is running. After a game update the mod does not support yet, the
-line says `Shared XP 1.1.2 is NOT active: the server was updated ...` instead
+line says `Shared XP 1.1.3 is NOT active: the server was updated ...` instead
 (`AnnounceInChat=0` turns the line off).
 
 ## Compatibility
@@ -28,6 +31,13 @@ line says `Shared XP 1.1.2 is NOT active: the server was updated ...` instead
 The mod checks the server build on every start. On any other build it does nothing, writes
 `unknown server build` into `xpshare.log` and the server runs as usual. After a game update
 the mod stays inactive until a new version is out.
+
+## Works with the Live Map
+
+[Live Map](https://github.com/oggii/enshrouded-livemap) ([Nexus](https://www.nexusmods.com/enshrouded/mods/209)):
+players, region names, fog of war, deadly shroud and finds on a web map, players install
+nothing. Both mods run side by side (Shared XP 1.1.3 or newer); when a player joins, the chat
+shows both lines. With Wine: `WINEDLLOVERRIDES=powrprof=n,b;iphlpapi=n,b`.
 
 ## Install
 
