@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.5 (2026-11-25)
+
+- Fix for server build 26430253: 1.1.4 started and said "active", but shared nothing on that
+  build. The game moved the table it uses to tell which player the experience system is
+  visiting; the mod now reads that position from the game's own code at start instead of
+  having it fixed, on every build.
+- The selftest checks that position too.
+
 ## 1.1.4 (2026-11-25)
 
 - Works on server build 26430253 (the early November update) as well as 26083076 and

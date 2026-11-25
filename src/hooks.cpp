@@ -180,6 +180,7 @@ bool create(SafetyHookMid& slot, uintptr_t target, safetyhook::MidHookFn fn, con
 bool install_hooks(const Targets& t, const Config& config, std::string& error) {
     g_config = config;
     g_targets = t;
+    set_entity_table_offset(t.entity_table);
     g_ledger.set_skip_joint_quests(!config.double_quest_xp);
     g_ledger.set_share_combat(config.share_combat_xp);
     // The reader first, so the ledger knows every player before the first gain arrives.

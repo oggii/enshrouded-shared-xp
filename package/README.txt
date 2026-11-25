@@ -1,4 +1,4 @@
-Enshrouded Shared XP 1.1.4
+Enshrouded Shared XP 1.1.5
 ==========================
 
 Server-side mod for Enshrouded dedicated servers. When one player earns non-combat XP
@@ -23,7 +23,7 @@ LINUX / DOCKER (WINE)
 
 CHECK
 Join the server: right after "Player <name> joined." the chat shows
-"Shared XP 1.1.4 is active ...". "is NOT active: the server was updated" means a game update
+"Shared XP 1.1.5 is active ...". "is NOT active: the server was updated" means a game update
 this version does not support yet. xpshare.log next to the server exe says more; set
 LogEveryShare=1 in xpshare.ini to log every share. AnnounceInChat=0 turns the chat line off.
 

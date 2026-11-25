@@ -17,6 +17,10 @@ struct Targets {
     // Combat system FUN_1400ec5c0, per receiver of a kill: add [r8+r9*4], r15d
     // (r15d = amount, edi = receiver entity id, r12 = index in the kill's receiver list).
     uintptr_t combat = 0;
+    // Offset of the entity table in the ECS world, read from the game's entity helper
+    // (FUN_140653a80 in 25988414): 0x828 up to 26083076, 0x830 in 26430253.
+    uint32_t entity_table = 0;
+    uintptr_t entity_helper = 0;  // where that helper is (for the selftest)
     const char* build = nullptr;  // label of the recognised server build, e.g. "26083076"
 };
 

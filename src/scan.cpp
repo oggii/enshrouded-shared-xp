@@ -51,6 +51,14 @@ constexpr const char* kKnowledgeSystemCall =
 constexpr const char* kGrantSystemCall =
     "44 8b 0d ?? ?? ?? ?? 48 8b cf 44 8b 45 a8 48 8b 55 08 e8 ?? ?? ?? ?? 48 8b 4d 18";
 
+// The game's entity helper (FUN_140653a80 in 25988414): id = [[world + disp32] + (index-1)*16].
+// The displacement is where the ECS world keeps its entity table; it moved from 0x828 to 0x830
+// in build 26430253, so it is read from here instead of being fixed in the code.
+constexpr const char* kEntityHelper =
+    "8b 41 08 4c 8b c2 85 c0 75 06 89 02 48 8b c2 c3 8d 50 ff 48 8b 01 48 03 d2 48 8b 88 ?? ?? ?? ?? "
+    "8b 04 d1 41 89 00";
+constexpr size_t kEntityTableOffset = 28;  // position of the disp32 in the pattern
+
 // Combat XP add in FUN_1400ec5c0 and the call after it (FUN_1400a6dd0, the field update).
 constexpr const char* kCombat = "47 01 3c 88 e8 ?? ?? ?? ?? 4c 8b b5 80 00 00 00";
 
@@ -176,6 +184,22 @@ bool find_targets(const uint8_t* base, Targets& out, std::string& error) {
         }
         *slots[i] = hits[0] + patterns[i].hook_offset;
     }
+    // Where the ECS world keeps its entity table (needed to tell which player the experience
+    // system is visiting); without it no player could receive shared XP.
+    std::vector<uintptr_t> helpers = find_all(code, size, parse(kEntityHelper));
+    if (helpers.size() != 1) {
+        std::snprintf(buf, sizeof buf, "entity helper matched %zu times (need exactly 1), not hooking", helpers.size());
+        error = buf;
+        return false;
+    }
+    std::memcpy(&out.entity_table, reinterpret_cast<const void*>(helpers[0] + kEntityTableOffset),
+                sizeof out.entity_table);
+    if (out.entity_table < 0x100 || out.entity_table > 0x4000 || out.entity_table % 8 != 0) {
+        std::snprintf(buf, sizeof buf, "entity table offset 0x%x looks wrong, not hooking", out.entity_table);
+        error = buf;
+        return false;
+    }
+    out.entity_helper = helpers[0];
     // The add helper is whatever both system calls call (the call is the 5 bytes before each
     // return address), and it has to look like the helper's entry.
     uintptr_t helper = call_target(out.knowledge_system_ret - 5);

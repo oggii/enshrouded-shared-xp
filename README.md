@@ -14,9 +14,9 @@ Players need nothing. Only the server gets the mod.
 Sister mod: **[Live Map](https://github.com/oggii/enshrouded-livemap)** serves a live web map of
 your server in the game's own look, also server-side only ([Nexus](https://www.nexusmods.com/enshrouded/mods/209)).
 
-When a player joins, the server chat shows `Shared XP 1.1.4 is active: ...`, so everybody can
+When a player joins, the server chat shows `Shared XP 1.1.5 is active: ...`, so everybody can
 see in game that the mod is running. After a game update the mod does not support yet, the
-line says `Shared XP 1.1.4 is NOT active: the server was updated ...` instead
+line says `Shared XP 1.1.5 is NOT active: the server was updated ...` instead
 (`AnnounceInChat=0` turns the line off).
 
 ## Compatibility
@@ -86,13 +86,13 @@ means the mod is not loaded (check the install) or text chat is off on the serve
 The mod writes `xpshare.log` next to the server exe. After a start it should show:
 
 ```
-xpshare 1.1.4 starting: Enabled=1 Multiplier=1.00 DoubleQuestXp=0 ShareCombatXp=0 AnnounceInChat=1 real powrprof loaded
+xpshare 1.1.5 starting: Enabled=1 Multiplier=1.00 DoubleQuestXp=0 ShareCombatXp=0 AnnounceInChat=1 real powrprof loaded
 hooked commit_read at ...
 hooked mining      at ...
 hooked knowledge   at ...
 hooked add_helper  at ...
 active on server build 26430253: non-combat XP is shared with every online player
-hooked join_line   at ... (chat line when a player joins: "Shared XP 1.1.4 is active: ...")
+hooked join_line   at ... (chat line when a player joins: "Shared XP 1.1.5 is active: ...")
 ```
 
 With `ShareCombatXp=1` there is one more line, `hooked combat`, and the last line says
