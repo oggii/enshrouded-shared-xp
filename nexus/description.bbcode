@@ -1,7 +1,13 @@
 [center][img]https://raw.githubusercontent.com/oggii/enshrouded-shared-xp/main/nexus/banner.jpg[/img][/center]
 
-[i][color=#ff7700][b]New in 1.1.3:[/b] runs side by side with the [b][url=https://www.nexusmods.com/enshrouded/mods/209]Live Map[/url][/b] (server-side web map): both mods add their chat line when a player joins, whichever starts first.[/color][/i]
-[b]1.1.2:[/b] a chat line when a player joins: [i]"Shared XP 1.1.3 is active: non-combat XP is shared with everyone online."[/i] After a game update the mod does not support yet, it says [i]"Shared XP 1.1.3 is NOT active: the server was updated ..."[/i] instead, so you notice right away. Turn the line off with [b]AnnounceInChat=0[/b].
+[center][size=5][b][color=#ff7700]Sorry for the long wait![/color][/b][/size]
+[size=3]I was abroad for a few weeks and, like an idiot, set nothing up to update the mod from there. The November server update broke Shared XP, and many of you went without it for weeks. I'm back home now, and [b]1.1.4 supports the new server build 26430253[/b].
+Thank you for your patience and your reports, and thanks to shanaya13 for bridging the gap with a patched DLL in the meantime.[/size][/center]
+[line]
+
+[i][color=#ff7700][b]New in 1.1.4:[/b] works on the November server update (build 26430253), as well as builds 26083076 and 25988414.[/color][/i]
+[b]1.1.3:[/b] runs side by side with the [b][url=https://www.nexusmods.com/enshrouded/mods/209]Live Map[/url][/b] (server-side web map): both mods add their chat line when a player joins, whichever starts first.
+[b]1.1.2:[/b] a chat line when a player joins: [i]"Shared XP 1.1.4 is active: non-combat XP is shared with everyone online."[/i] After a game update the mod does not support yet, it says [i]"Shared XP 1.1.4 is NOT active: the server was updated ..."[/i] instead, so you notice right away. Turn the line off with [b]AnnounceInChat=0[/b].
 [b]1.1.1:[/b] works on the 20 October server update (build 26083076) as well as build 25988414.
 [b]1.1.0:[/b] optional combat XP sharing ([b]ShareCombatXp=1[/b]) for players far from the kill.
 
@@ -26,7 +32,7 @@ Combat XP is left to the game by default (it already shares it with players near
 [*]Add the environment variable [i]WINEDLLOVERRIDES=powrprof=n,b[/i] (with the Live Map: [i]powrprof=n,b;iphlpapi=n,b[/i]).
 [*]Start the container.
 [/list]
-[b]Check:[/b] join the server; right after "Player <name> joined." the chat shows [i]"Shared XP 1.1.3 is active ..."[/i]. If it says [i]"is NOT active: the server was updated"[/i], your host installed a game update: wait for a new version here. No line at all: the mod is not loaded (check the install) or text chat is off on the server; [i]xpshare.log[/i] next to the server exe says more.
+[b]Check:[/b] join the server; right after "Player <name> joined." the chat shows [i]"Shared XP 1.1.4 is active ..."[/i]. If it says [i]"is NOT active: the server was updated"[/i], your host installed a game update: wait for a new version here. No line at all: the mod is not loaded (check the install) or text chat is off on the server; [i]xpshare.log[/i] next to the server exe says more.
 
 [center][img]https://raw.githubusercontent.com/oggii/enshrouded-shared-xp/main/nexus/screens/01-chat-join-1.1.3.jpg[/img]
 [i]Right after a player joins: the Shared XP line, here together with the Live Map's link.[/i][/center]
@@ -55,7 +61,7 @@ Settings live in [i]xpshare.ini[/i]; restart the server after changes.
 
 [size=4][b]Requirements[/b][/size]
 [list]
-[*]Enshrouded 1.0 dedicated server, Steam builds [b]25988414[/b] and [b]26083076[/b] (October 2026). After a game update, wait for an updated version.
+[*]Enshrouded 1.0 dedicated server, Steam builds [b]25988414[/b], [b]26083076[/b] (October 2026) and [b]26430253[/b] (November 2026). After a game update, wait for an updated version.
 [*]Windows server, or Linux/Docker under Wine (tested with mornedhels/enshrouded-server:1.7.2-wine).
 [*]Access to the server folder, and to environment variables on Linux hosts.
 [*]No other mods needed.

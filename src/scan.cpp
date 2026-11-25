@@ -23,6 +23,7 @@ struct Build {
 constexpr Build kBuilds[] = {
     {1792148062, 0x1dcf000, "25988414"},  // 16 Oct 2026, Game Version SVN 1269579
     {1792507668, 0x1dd1000, "26083076"},  // 20 Oct 2026
+    {1793791038, 0x1dde000, "26430253"},  // early November 2026
 };
 
 // Patterns are hex bytes; "??" matches anything (used for call targets and rip-relative

@@ -1,11 +1,11 @@
-Enshrouded Shared XP 1.1.3
+Enshrouded Shared XP 1.1.4
 ==========================
 
 Server-side mod for Enshrouded dedicated servers. When one player earns non-combat XP
 (exploration, books, quests, mining, item sets), every other online player gets the same
 amount, at any distance. Players need nothing; only the server gets the mod.
 
-Works with server builds 25988414 and 26083076 (Enshrouded 1.0, October 2026). On other
+Works with server builds 25988414, 26083076 and 26430253 (Enshrouded 1.0, Oct/Nov 2026). On other
 builds the mod stays inactive, the server runs as usual and the chat says so when a player
 joins.
 
@@ -23,7 +23,7 @@ LINUX / DOCKER (WINE)
 
 CHECK
 Join the server: right after "Player <name> joined." the chat shows
-"Shared XP 1.1.3 is active ...". "is NOT active: the server was updated" means a game update
+"Shared XP 1.1.4 is active ...". "is NOT active: the server was updated" means a game update
 this version does not support yet. xpshare.log next to the server exe says more; set
 LogEveryShare=1 in xpshare.ini to log every share. AnnounceInChat=0 turns the chat line off.
 

@@ -3,8 +3,8 @@
 All addresses are for `enshrouded_server.exe` of Steam build 25988414 (TimeDateStamp
 1792148062, SizeOfImage 0x1dcf000, image base 0x140000000). RVA = address − 0x140000000.
 
-Build 26083076 (20 October 2026) has the same code at each site; only the addresses moved (see
-`tools/selftest.cpp` for both builds). Three patterns carry wildcards for call targets and
+Builds 26083076 (20 October 2026) and 26430253 (early November 2026) have the same code at each
+site; only the addresses moved (see `tools/selftest.cpp` for all builds). Three patterns carry wildcards for call targets and
 rip-relative displacements, and the add helper is resolved through the call the two XP systems make.
 
 ## Loading

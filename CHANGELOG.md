@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.4 (2026-11-25)
+
+- Works on server build 26430253 (the early November update) as well as 26083076 and
+  25988414. All hook sites have the same code as before; only their addresses moved.
+- The selftest knows the hook sites of all three builds.
+
 ## 1.1.3 (2026-10-22)
 
 - Works together with other mods that add a chat line at the same spot (the Enshrouded Live
