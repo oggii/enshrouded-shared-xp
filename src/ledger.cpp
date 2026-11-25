@@ -26,6 +26,9 @@ bool Ledger::record(uintptr_t player, uint32_t amount, uint8_t type, uint64_t no
     if (type == static_cast<uint8_t>(Source::Combat) && (!share_combat_ || kill == 0)) {
         return false;
     }
+    if (type == static_cast<uint8_t>(Source::Quest) && !share_quest_) {
+        return false;
+    }
     gains_.push_back({++seq_, player, amount, type, kill, now_ms});
     return true;
 }
@@ -33,6 +36,11 @@ bool Ledger::record(uintptr_t player, uint32_t amount, uint8_t type, uint64_t no
 void Ledger::set_skip_joint_quests(bool on) {
     std::lock_guard lock(mutex_);
     skip_joint_quests_ = on;
+}
+
+void Ledger::set_share_quest(bool on) {
+    std::lock_guard lock(mutex_);
+    share_quest_ = on;
 }
 
 void Ledger::set_share_combat(bool on) {

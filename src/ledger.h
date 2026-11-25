@@ -44,6 +44,9 @@ public:
     // On: quest XP that a receiver earned itself at the same time is not shared to it again.
     void set_skip_joint_quests(bool on);
 
+    // Off: quest gains are not recorded, so quest XP is never shared. On by default.
+    void set_share_quest(bool on);
+
     // On: combat XP is shared with players who were not at the kill. Off: combat is ignored.
     void set_share_combat(bool on);
 
@@ -89,6 +92,7 @@ private:
     mutable std::mutex mutex_;
     bool skip_joint_quests_ = false;
     bool share_combat_ = false;
+    bool share_quest_ = true;
     uint64_t seq_ = 0;
     std::vector<Gain> gains_;
     std::unordered_map<uintptr_t, Visit> visits_;

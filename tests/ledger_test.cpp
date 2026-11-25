@@ -193,6 +193,16 @@ static void combat_is_ignored_unless_shared() {
     EXPECT_EQ(l.record(A, 30, kCombat, 1, 1), true);
 }
 
+static void quest_is_not_shared_when_switched_off() {
+    Ledger l;
+    l.set_share_quest(false);
+    l.collect(A, 1.0, 0);
+    l.collect(B, 1.0, 0);
+    EXPECT_EQ(l.record(A, 1000, 3, 1), false);  // quest
+    EXPECT_EQ(l.record(A, 50, 5, 1), true);     // mining still shared
+    EXPECT_EQ(l.collect(B, 1.0, 100'000), uint32_t{50});
+}
+
 static void far_player_gets_the_kill_once_near_players_nothing() {
     Ledger l;
     l.set_share_combat(true);
@@ -266,6 +276,7 @@ int main() {
     gains_after_a_held_quest_wait_and_then_arrive();
     test_mode_keeps_own_quest_with_filter_on();
     combat_is_ignored_unless_shared();
+    quest_is_not_shared_when_switched_off();
     far_player_gets_the_kill_once_near_players_nothing();
     separate_kills_are_shared_separately();
     kill_split_over_two_visits_counts_once();

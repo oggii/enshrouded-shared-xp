@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.6 (2026-11-25)
+
+- `ShareQuestXp` (default 1, so nothing changes): `0` shares no quest XP at all. For servers
+  that also run Quest Catch-Up, which gives every player the quests they missed; with quest
+  sharing on, the other players online would get that catch-up XP a second time.
+
 ## 1.1.5 (2026-11-25)
 
 - Fix for server build 26430253: 1.1.4 started and said "active", but shared nothing on that

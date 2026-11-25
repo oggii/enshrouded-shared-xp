@@ -22,6 +22,9 @@ constexpr const char* kDefaults =
     "; 1 = each player also gets the other players' share, so double quest XP.\n"
     "; With 0, shared quest XP arrives about 5 seconds after the quest.\n"
     "DoubleQuestXp=0\n"
+    "; 0 = quest XP is not shared at all. Set 0 if the server also runs Quest Catch-Up:\n"
+    "; it gives every player the quests they missed, so sharing would pay them twice.\n"
+    "ShareQuestXp=1\n"
     "; Combat XP: 0 = left to the game (only players near a kill get XP),\n"
     "; 1 = players far from a kill also get the XP the players at the kill got.\n"
     "ShareCombatXp=0\n"
@@ -56,6 +59,7 @@ Config load_config(const std::wstring& dir) {
     c.test_self_share = GetPrivateProfileIntW(L"xpshare", L"TestSelfShare", 0, path.c_str()) != 0;
     c.log_all_xp = GetPrivateProfileIntW(L"xpshare", L"LogAllXp", 0, path.c_str()) != 0;
     c.double_quest_xp = GetPrivateProfileIntW(L"xpshare", L"DoubleQuestXp", 0, path.c_str()) != 0;
+    c.share_quest_xp = GetPrivateProfileIntW(L"xpshare", L"ShareQuestXp", 1, path.c_str()) != 0;
     c.share_combat_xp = GetPrivateProfileIntW(L"xpshare", L"ShareCombatXp", 0, path.c_str()) != 0;
     c.announce_in_chat = GetPrivateProfileIntW(L"xpshare", L"AnnounceInChat", 1, path.c_str()) != 0;
     c.test_unknown_build = GetPrivateProfileIntW(L"xpshare", L"TestUnknownBuild", 0, path.c_str()) != 0;

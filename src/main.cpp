@@ -28,10 +28,10 @@ DWORD WINAPI start(LPVOID) {
     std::wstring dir = exe_dir();
     xpshare::Config config = xpshare::load_config(dir);
     xpshare::log_open(dir, config.log);
-    xpshare::log("xpshare %s starting: Enabled=%d Multiplier=%.2f DoubleQuestXp=%d ShareCombatXp=%d "
-                 "AnnounceInChat=%d real powrprof %s",
+    xpshare::log("xpshare %s starting: Enabled=%d Multiplier=%.2f DoubleQuestXp=%d ShareQuestXp=%d "
+                 "ShareCombatXp=%d AnnounceInChat=%d real powrprof %s",
                  kVersion, config.enabled, config.multiplier, config.double_quest_xp,
-                 config.share_combat_xp, config.announce_in_chat, g_real_loaded ? "loaded" : "MISSING");
+                 config.share_quest_xp, config.share_combat_xp, config.announce_in_chat, g_real_loaded ? "loaded" : "MISSING");
     if (!config.enabled) {
         xpshare::log("disabled in xpshare.ini, server runs without sharing");
         return 0;

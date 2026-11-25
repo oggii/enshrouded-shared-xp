@@ -183,6 +183,7 @@ bool install_hooks(const Targets& t, const Config& config, std::string& error) {
     set_entity_table_offset(t.entity_table);
     g_ledger.set_skip_joint_quests(!config.double_quest_xp);
     g_ledger.set_share_combat(config.share_combat_xp);
+    g_ledger.set_share_quest(config.share_quest_xp);
     // The reader first, so the ledger knows every player before the first gain arrives.
     if (create(g_commit_read, t.commit_read, on_commit_read, "commit_read", error) &&
         create(g_mining, t.mining, on_mining, "mining", error) &&

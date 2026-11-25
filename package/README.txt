@@ -1,4 +1,4 @@
-Enshrouded Shared XP 1.1.5
+Enshrouded Shared XP 1.1.6
 ==========================
 
 Server-side mod for Enshrouded dedicated servers. When one player earns non-combat XP
@@ -23,7 +23,7 @@ LINUX / DOCKER (WINE)
 
 CHECK
 Join the server: right after "Player <name> joined." the chat shows
-"Shared XP 1.1.5 is active ...". "is NOT active: the server was updated" means a game update
+"Shared XP 1.1.6 is active ...". "is NOT active: the server was updated" means a game update
 this version does not support yet. xpshare.log next to the server exe says more; set
 LogEveryShare=1 in xpshare.ini to log every share. AnnounceInChat=0 turns the chat line off.
 
@@ -33,6 +33,8 @@ Both mods add a line after "Player <name> joined." and run side by side.
 QUESTS DONE TOGETHER
 DoubleQuestXp=0 (default): each player gets the quest XP once.
 DoubleQuestXp=1: each player also gets the other players' share (double quest XP).
+ShareQuestXp=0: quest XP is not shared at all. Use this if the server also runs
+Quest Catch-Up (it gives every player the quests they missed).
 
 COMBAT XP
 ShareCombatXp=0 (default): left to the game, only players near a kill get XP.

@@ -14,9 +14,9 @@ Players need nothing. Only the server gets the mod.
 Sister mod: **[Live Map](https://github.com/oggii/enshrouded-livemap)** serves a live web map of
 your server in the game's own look, also server-side only ([Nexus](https://www.nexusmods.com/enshrouded/mods/209)).
 
-When a player joins, the server chat shows `Shared XP 1.1.5 is active: ...`, so everybody can
+When a player joins, the server chat shows `Shared XP 1.1.6 is active: ...`, so everybody can
 see in game that the mod is running. After a game update the mod does not support yet, the
-line says `Shared XP 1.1.5 is NOT active: the server was updated ...` instead
+line says `Shared XP 1.1.6 is NOT active: the server was updated ...` instead
 (`AnnounceInChat=0` turns the line off).
 
 ## Compatibility
@@ -86,13 +86,13 @@ means the mod is not loaded (check the install) or text chat is off on the serve
 The mod writes `xpshare.log` next to the server exe. After a start it should show:
 
 ```
-xpshare 1.1.5 starting: Enabled=1 Multiplier=1.00 DoubleQuestXp=0 ShareCombatXp=0 AnnounceInChat=1 real powrprof loaded
+xpshare 1.1.6 starting: Enabled=1 Multiplier=1.00 DoubleQuestXp=0 ShareQuestXp=1 ShareCombatXp=0 AnnounceInChat=1 real powrprof loaded
 hooked commit_read at ...
 hooked mining      at ...
 hooked knowledge   at ...
 hooked add_helper  at ...
 active on server build 26430253: non-combat XP is shared with every online player
-hooked join_line   at ... (chat line when a player joins: "Shared XP 1.1.5 is active: ...")
+hooked join_line   at ... (chat line when a player joins: "Shared XP 1.1.6 is active: ...")
 ```
 
 With `ShareCombatXp=1` there is one more line, `hooked combat`, and the last line says
@@ -121,6 +121,7 @@ The mod creates the file with these defaults if it is missing. Changes need a se
 | `Enabled` | `1` | `0` turns the mod off; the server runs unmodded. |
 | `Multiplier` | `1.0` | Shared XP = the other player's gain × this value. `0.5` = half, `0` = no sharing. Range 0 to 10. |
 | `DoubleQuestXp` | `0` | Quests finished together. `0`: each player gets the quest XP once (from the game); shared quest XP arrives about 5 seconds after the quest. `1`: each player also gets the other players' share, so double quest XP. |
+| `ShareQuestXp` | `1` | `0`: quest XP is not shared at all. Set `0` if the server also runs Quest Catch-Up, which gives every player the quests they missed; sharing would pay them twice. |
 | `Log` | `1` | Write `xpshare.log`. |
 | `LogEveryShare` | `0` | `1` = one line per gain and per share. Useful to check it works; the log grows fast. |
 | `ShareCombatXp` | `0` | Combat XP. `0`: left to the game, only players near a kill get XP. `1`: every player who was not near the kill also gets XP for it, the same amount the players at the kill got (the largest, if they got different amounts), once per kill. Players at the kill get nothing extra. Arrives about 1 second after the kill. |
