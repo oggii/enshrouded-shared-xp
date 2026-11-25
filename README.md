@@ -11,8 +11,11 @@ With `ShareCombatXp=1` players far from a kill get the same XP as the players at
 
 Players need nothing. Only the server gets the mod.
 
-Sister mod: **[Live Map](https://github.com/oggii/enshrouded-livemap)** serves a live web map of
-your server in the game's own look, also server-side only ([Nexus](https://www.nexusmods.com/enshrouded/mods/209)).
+Sister mods, also server-side only:
+**[Live Map](https://github.com/oggii/enshrouded-livemap)** serves a live web map of your server
+in the game's own look ([Nexus](https://www.nexusmods.com/enshrouded/mods/209)), and
+**[Quest Catch-Up](https://github.com/oggii/enshrouded-quest-catchup)** gives players who were
+offline or far away the quests they missed.
 
 When a player joins, the server chat shows `Shared XP 1.1.6 is active: ...`, so everybody can
 see in game that the mod is running. After a game update the mod does not support yet, the
@@ -132,7 +135,9 @@ The mod creates the file with these defaults if it is missing. Changes need a se
 
 ## Good to know
 
-- **Online only.** A player who is offline gets nothing for what others earned meanwhile.
+- **Online only.** A player who is offline gets nothing for what others earned meanwhile. For
+  missed quests, see [Quest Catch-Up](https://github.com/oggii/enshrouded-quest-catchup) (then
+  set `ShareQuestXp=0`).
 - **Quests done together.** The game gives every player who finishes a quest its XP. With
   `DoubleQuestXp=0` (default) the mod does not add the other players' share on top; with `1`
   it does, so double quest XP. The mod treats two quest gains of the same amount within 10
